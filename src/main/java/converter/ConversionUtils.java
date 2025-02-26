@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -145,7 +144,7 @@ public class ConversionUtils {
             transformer.transform(new DOMSource(element), new StreamResult(writer));
             return writer.getBuffer().toString();
         } catch (Exception e) {
-            throw new RuntimeException("Error converting Element to String", e);
+            throw new RuntimeException("Error converting Member to String", e);
         }
     }
 
