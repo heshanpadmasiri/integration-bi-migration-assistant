@@ -1,5 +1,9 @@
 package mule;
 
+import ballerina.BallerinaModel;
+
+import java.util.List;
+
 public class Constants {
 
     // Global Elements
@@ -76,11 +80,18 @@ public class Constants {
     public static final String HTTP_RESOURCE_RETURN_TYPE_UPPER = "anydata|http:Response|http:StatusCodeResponse|" +
             "stream<http:SseEvent, error?>|stream<http:SseEvent, error>|error";
     public static final String DB_QUERY_DEFAULT_TEMPLATE = "stream<%s, sql:Error?>";
-    public static final String RECORD_TYPE = "record {}";
     public static final String SQL_PARAMETERIZED_QUERY_TYPE = "sql:ParameterizedQuery";
 
     //DataWeave
     public static final String INPUT_PAYLOAD = "input-payload";
     public static final String CLASSPATH_DIR = "src/main/resources/";
     public static final String CLASSPATH = "classpath:";
+
+    public static class PredefinedTypes {
+
+        private static final BallerinaModel.TypeDesc.BuiltinType anydata =
+                BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
+        public static final BallerinaModel.TypeDesc RECORD_TYPE = new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(),
+                anydata);
+    }
 }

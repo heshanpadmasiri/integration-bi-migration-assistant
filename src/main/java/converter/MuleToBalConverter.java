@@ -4,15 +4,8 @@ import ballerina.BallerinaModel;
 import ballerina.CodeGenerator;
 import dataweave.converter.DWReader;
 import dataweave.converter.DWUtils;
-import io.ballerina.compiler.syntax.tree.SyntaxTree;
 import mule.Constants;
 import mule.MuleModel;
-import org.w3c.dom.CDATASection;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,10 +19,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import io.ballerina.compiler.syntax.tree.SyntaxTree;
+import org.w3c.dom.CDATASection;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import static ballerina.BallerinaModel.BallerinaExpression;
 import static ballerina.BallerinaModel.BallerinaStatement;
@@ -59,17 +59,17 @@ import static converter.ConversionUtils.insertLeadingSlash;
 import static converter.ConversionUtils.processQueryParams;
 import static mule.MuleModel.CatchExceptionStrategy;
 import static mule.MuleModel.Choice;
+import static mule.MuleModel.Database;
 import static mule.MuleModel.DbInParam;
 import static mule.MuleModel.DbMSQLConfig;
 import static mule.MuleModel.DbTemplateQuery;
-import static mule.MuleModel.Database;
 import static mule.MuleModel.Enricher;
 import static mule.MuleModel.Flow;
 import static mule.MuleModel.FlowReference;
+import static mule.MuleModel.HTTPListenerConfig;
 import static mule.MuleModel.HttpListener;
 import static mule.MuleModel.HttpRequest;
 import static mule.MuleModel.Kind;
-import static mule.MuleModel.HTTPListenerConfig;
 import static mule.MuleModel.LogLevel;
 import static mule.MuleModel.Logger;
 import static mule.MuleModel.MuleRecord;
@@ -77,17 +77,18 @@ import static mule.MuleModel.ObjectToJson;
 import static mule.MuleModel.ObjectToString;
 import static mule.MuleModel.Payload;
 import static mule.MuleModel.QueryType;
-import static mule.MuleModel.SetVariable;
 import static mule.MuleModel.SetSessionVariable;
+import static mule.MuleModel.SetVariable;
 import static mule.MuleModel.SubFlow;
 import static mule.MuleModel.TransformMessage;
 import static mule.MuleModel.Type;
-import static mule.MuleModel.WhenInChoice;
 import static mule.MuleModel.UnsupportedBlock;
+import static mule.MuleModel.WhenInChoice;
 
 public class MuleToBalConverter {
 
     public static class Data {
+
         // Mule global elements
         HashMap<String, HTTPListenerConfig> globalHttpListenerConfigsMap = new LinkedHashMap<>();
         HashMap<String, DbMSQLConfig> globalDbMySQLConfigsMap = new LinkedHashMap<>();
@@ -130,6 +131,7 @@ public class MuleToBalConverter {
         FlowInfo currentFlowInfo = null;
 
         static class FlowInfo {
+
             final String flowName;
             private Context context;
             private PayloadVarInfo currentPayload;
@@ -160,6 +162,7 @@ public class MuleToBalConverter {
     static final PayloadVarInfo DEFAULT_PAYLOAD = new PayloadVarInfo("()", "null");
 
     public record PayloadVarInfo(String type, String nameReference) {
+
     }
 
     public static SyntaxTree convertToBallerina(String xmlFilePath) {
@@ -674,8 +677,8 @@ public class MuleToBalConverter {
             case Database database -> {
                 data.imports.add(new Import(Constants.ORG_BALLERINA, Constants.MODULE_SQL, Optional.empty()));
                 String streamConstraintType = "Record";
-                data.typeDefMap.put(streamConstraintType, new ModuleTypeDef(streamConstraintType,
-                        Constants.RECORD_TYPE));
+                data.typeDefMap.put(streamConstraintType,
+                        new ModuleTypeDef(streamConstraintType, Constants.PredefinedTypes.RECORD_TYPE));
 
                 statementList.add(new BallerinaStatement("\n\n// database operation\n"));
                 String dbQueryVarName = String.format(Constants.VAR_DB_QUERY_TEMPLATE, data.dbQueryVarCount++);
@@ -846,7 +849,6 @@ public class MuleToBalConverter {
         String target = element.getAttribute("target");
 
         NodeList children = element.getChildNodes();
-
 
         MuleRecord block = null;
         for (int i = 0; i < children.getLength(); i++) {
