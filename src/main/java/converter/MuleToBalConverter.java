@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -54,16 +53,16 @@ import static converter.ConversionUtils.getBallerinaResourcePath;
 import static converter.ConversionUtils.insertLeadingSlash;
 import static converter.ConversionUtils.processQueryParams;
 import static mule.MuleModel.Choice;
+import static mule.MuleModel.Database;
 import static mule.MuleModel.DbInParam;
 import static mule.MuleModel.DbMSQLConfig;
 import static mule.MuleModel.DbTemplateQuery;
-import static mule.MuleModel.Database;
 import static mule.MuleModel.Flow;
 import static mule.MuleModel.FlowReference;
+import static mule.MuleModel.HTTPListenerConfig;
 import static mule.MuleModel.HttpListener;
 import static mule.MuleModel.HttpRequest;
 import static mule.MuleModel.Kind;
-import static mule.MuleModel.HTTPListenerConfig;
 import static mule.MuleModel.LogLevel;
 import static mule.MuleModel.Logger;
 import static mule.MuleModel.MuleRecord;
@@ -75,8 +74,8 @@ import static mule.MuleModel.SetVariable;
 import static mule.MuleModel.SubFlow;
 import static mule.MuleModel.TransformMessage;
 import static mule.MuleModel.Type;
-import static mule.MuleModel.WhenInChoice;
 import static mule.MuleModel.UnsupportedBlock;
+import static mule.MuleModel.WhenInChoice;
 
 public class MuleToBalConverter {
 
@@ -497,7 +496,8 @@ public class MuleToBalConverter {
             case Database database -> {
                 data.imports.add(new Import(Constants.ORG_BALLERINA, Constants.MODULE_SQL, Optional.empty()));
                 String streamConstraintType = "Record";
-                data.typeDef.put(streamConstraintType, new ModuleTypeDef(streamConstraintType, Constants.RECORD_TYPE));
+                data.typeDef.put(streamConstraintType,
+                        new ModuleTypeDef(streamConstraintType, Constants.PredefinedTypes.RECORD_TYPE));
 
                 statementList.add(new BallerinaStatement("\n\n// database operation\n"));
                 String dbQueryVarName = String.format(Constants.VAR_DB_QUERY_TEMPLATE, data.dbQueryVarCount++);
