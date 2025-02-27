@@ -3,6 +3,7 @@ package mule;
 import ballerina.BallerinaModel;
 
 import java.util.List;
+import java.util.Optional;
 
 public class Constants {
 
@@ -82,9 +83,8 @@ public class Constants {
 
     public static class PredefinedTypes {
 
-        private static final BallerinaModel.TypeDesc.BuiltinType anydata =
-                BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
-        public static final BallerinaModel.TypeDesc RECORD_TYPE = new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(),
-                anydata);
+        private static final BallerinaModel.TypeDesc.BuiltinType ANYDATA = BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
+        public static final BallerinaModel.TypeDesc RECORD_TYPE =
+                new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), List.of(), Optional.empty());
     }
 }

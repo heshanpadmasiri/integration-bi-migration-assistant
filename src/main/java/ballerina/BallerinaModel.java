@@ -27,21 +27,32 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public sealed interface TypeDesc {
 
-        record RecordTypeDesc(List<RecordField> fields, TypeDesc rest) implements TypeDesc {
+        record RecordTypeDesc(List<TypeDesc> inclusions, List<RecordField> fields, Optional<TypeDesc> rest)
+                implements TypeDesc {
 
             private static final String INDENT = "  ";
 
             @Override
             public String toString() {
                 StringBuilder sb = new StringBuilder();
-                sb.append("record {").append("\n");
+                boolean inclusiveRecord = rest.isEmpty();
+                if (inclusiveRecord) {
+                    sb.append("record {").append("\n");
+                } else {
+                    sb.append("record {|").append("\n");
+                }
+                for (TypeDesc inclusion : inclusions) {
+                    sb.append(INDENT).append("include ").append(inclusion).append("\n");
+                }
                 for (RecordField field : fields) {
                     sb.append(INDENT).append(field).append("\n");
                 }
-                if (rest != BuiltinType.ANYDATA) {
-                    sb.append(INDENT).append("...").append(rest).append("\n");
+                rest.ifPresent(typeDesc -> sb.append(INDENT).append("...").append(typeDesc).append("\n"));
+                if (inclusiveRecord) {
+                    sb.append("}");
+                } else {
+                    sb.append("|}");
                 }
-                sb.append("}");
                 return sb.toString();
             }
 
@@ -62,15 +73,22 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             }
         }
 
-        record UnionTypeDesc(Collection<TypeDesc> members) implements TypeDesc {
+        record UnionTypeDesc(Collection<? extends TypeDesc> members) implements TypeDesc {
 
             public static UnionTypeDesc of(TypeDesc... members) {
                 return new UnionTypeDesc(List.of(members));
             }
+
+            @Override
+            public String toString() {
+                return String.join(" | ", members.stream().map(Object::toString).toList());
+            }
         }
 
         enum BuiltinType implements TypeDesc {
-            ANYDATA("anydata");
+            ANYDATA("anydata"),
+            NIL("()"),
+            STRING("string");
 
             private final String name;
 
