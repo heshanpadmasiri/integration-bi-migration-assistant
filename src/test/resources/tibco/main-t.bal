@@ -1,3 +1,5 @@
+import ballerina/http;
+
 type ErrorReport record {
     string StackTrace;
     string Msg;
@@ -38,17 +40,6 @@ type ProcessContext record {
     string TrackingInfo;
 };
 
-type anydatarecord {|
-...anydata
-|};
-type OptionalErrorReport OptionalErrorReport;
-
-type ErrorReport ErrorReport;
-
-type FaultDetail FaultDetail;
-
-type ProcessContext ProcessContext;
-
 type CorrelationValue string;
 
 type ActivityExceptionType record {
@@ -71,3 +62,29 @@ type ActivityException ActivityExceptionType;
 type ActivityTimedOutException ActivityTimedOutExceptionType;
 
 type DuplicateKeyException DuplicateKeyExceptionType;
+
+type SuccessSchema record {
+    int FICOScore;
+    int NoOfInquiries;
+    string Rating;
+};
+
+type GiveNewSchemaNameHere record {
+    string DOB;
+    string FirstName;
+    string LastName;
+    string SSN;
+};
+
+type CreditScoreSuccessSchema record {
+    SuccessSchema EquifaxResponse;
+    SuccessSchema ExperianResponse;
+    SuccessSchema TransUnionResponse;
+};
+
+listener http:Listener LISTENER = new (8080, {host: "localhost"});
+
+service /CreditDetails on LISTENER {
+    resource function post creditdetails(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError {
+    }
+}

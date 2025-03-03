@@ -18,14 +18,14 @@
 
 package converter.tibco;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class ConversionTest {
 
@@ -50,6 +50,15 @@ public class ConversionTest {
                 throw new AssertionError("Parsing failed for a valid input: " + path, e);
             }
         }
+    }
+
+    @Test
+    public void test() throws IOException {
+        Path path = Path.of("src/test/resources/tibco/main-t.bwp");
+        SyntaxTree syntaxTree = TibcoToBalConverter.convertToBallerina(path.toString());
+        String source = syntaxTree.toSourceCode();
+        String expectedSource = Files.readString(Path.of(path.toString().replace(".bwp", ".bal")));
+        Assert.assertEquals(source, expectedSource);
     }
 
     @Test(groups = {"tibco", "converter"}, dataProvider = "testCaseProvider")

@@ -40,17 +40,6 @@ type ProcessContext record {
     string TrackingInfo;
 };
 
-type anydatarecord {|
-...anydata
-|};
-type OptionalErrorReport OptionalErrorReport;
-
-type ErrorReport ErrorReport;
-
-type FaultDetail FaultDetail;
-
-type ProcessContext ProcessContext;
-
 type CorrelationValue string;
 
 type ActivityExceptionType record {
@@ -74,6 +63,38 @@ type ActivityTimedOutException ActivityTimedOutExceptionType;
 
 type DuplicateKeyException DuplicateKeyExceptionType;
 
-type ActivityErrorDataType ActivityTimedOutException|()|NOT_FOUND|INTERNAL_SERVER_ERROR;
+type ActivityErrorDataType ActivityTimedOutException|()|http:NotFound|http:InternalServerError;
 
 type ActivityErrorData ActivityErrorDataType;
+
+type SuccessSchema record {
+    int FICOScore;
+    int NoOfInquiries;
+    string Rating;
+};
+
+type GiveNewSchemaNameHere record {
+    string DOB;
+    string FirstName;
+    string LastName;
+    string SSN;
+};
+
+type CreditScoreSuccessSchema record {
+    SuccessSchema EquifaxResponse;
+    SuccessSchema ExperianResponse;
+    SuccessSchema TransUnionResponse;
+};
+
+const string client_404_RecordNotFound = "Record Not Found";
+listener http:Listener LISTENER = new (8080, {host: "localhost"});
+
+service /y54cuadtcxtfstqs3rux2gfdaxppoqgc on LISTENER {
+    resource function post creditscore(GiveNewSchemaNameHere input) returns SuccessSchema|http:NotFound|http:InternalServerError|client_404_RecordNotFound {
+    }
+}
+
+service / on LISTENER {
+    resource function post creditscore(GiveNewSchemaNameHere input) returns SuccessSchema|http:NotFound|http:InternalServerError {
+    }
+}

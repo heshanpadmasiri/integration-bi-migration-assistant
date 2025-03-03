@@ -88,7 +88,8 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
         enum BuiltinType implements TypeDesc {
             ANYDATA("anydata"),
             NIL("()"),
-            STRING("string");
+            STRING("string"),
+            INT("int");
 
             private final String name;
 
@@ -104,7 +105,22 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     }
 
-    public record ModuleVar(String name, String type, BallerinaExpression expr) {
+    public record ModuleVar(String name, String type, BallerinaExpression expr, boolean constant) {
+
+        public ModuleVar(String name, String type, BallerinaExpression expr) {
+            this(name, type, expr, false);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            if (constant) {
+                sb.append("const ");
+            }
+            sb.append(type).append(" ").append(name).append(" ").append("=").append(" ").append(expr.expr)
+                    .append(";\n");
+            return sb.toString();
+        }
     }
 
     public record Service(String basePath, List<String> listenerRefs, List<Resource> resources,
@@ -129,6 +145,10 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     }
 
     public record Parameter(String name, String type, Optional<BallerinaExpression> defaultExpr) {
+
+        public Parameter(String type, String name) {
+            this(name, type, Optional.empty());
+        }
     }
 
     public record BallerinaStatement(String stmt) implements Statement {

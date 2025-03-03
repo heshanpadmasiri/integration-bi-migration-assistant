@@ -628,13 +628,13 @@ public final class XmlToTibcoModelConverter {
 
     private static TibcoModel.Type.WSDLDefinition.PortType parsePortType(Element element) {
         String name = element.getAttribute("name");
-        // FIXME:
-        String apiPath = "";
+        String apiPath = getAttributeIgnoringNamespace(element, "bw.rest.apipath");
+        String basePath = getAttributeIgnoringNamespace(element, "bw.rest.basepath");
         Element operation = getFistMatchingChild(element,
                 (child) -> getTagNameWithoutNameSpace(child).equals("operation")).orElseThrow(
                 () -> new ParserException("Operation not found in portType", element));
         TibcoModel.Type.WSDLDefinition.PortType.Operation portOperation = parsePortOperation(operation);
-        return new TibcoModel.Type.WSDLDefinition.PortType(name, apiPath, portOperation);
+        return new TibcoModel.Type.WSDLDefinition.PortType(name, apiPath, basePath, portOperation);
     }
 
     private static TibcoModel.Type.WSDLDefinition.PortType.Operation parsePortOperation(Element operation) {
@@ -683,12 +683,26 @@ public final class XmlToTibcoModelConverter {
     }
 
     private static TibcoModel.Type.WSDLDefinition.Message.Part parseMessagePart(Element node) {
+        if (node.hasAttribute("element")) {
+            return parseReferencePart(node);
+        } else {
+            return parseInlinePart(node);
+        }
+    }
+
+    private static TibcoModel.Type.WSDLDefinition.Message.Part.InlineError parseInlinePart(Element node) {
         String name = node.getAttribute("name");
-        Optional<TibcoModel.NameSpaceValue> element = node.hasAttribute("element") ?
-                Optional.of(TibcoModel.NameSpaceValue.from(node.getAttribute("element"))) : Optional.empty();
+        String typeName = node.getAttribute("type");
+        String value = getAttributeIgnoringNamespace(node, "reasonPhrase");
+        return new TibcoModel.Type.WSDLDefinition.Message.Part.InlineError(name, value, typeName);
+    }
+
+    private static TibcoModel.Type.WSDLDefinition.Message.Part.Reference parseReferencePart(Element node) {
+        String name = node.getAttribute("name");
+        TibcoModel.NameSpaceValue element = TibcoModel.NameSpaceValue.from(node.getAttribute("element"));
         // TODO: is this correct?
         boolean multipleNamespaces = node.hasAttribute("multipleNamespaces");
-        return new TibcoModel.Type.WSDLDefinition.Message.Part(name, element, multipleNamespaces);
+        return new TibcoModel.Type.WSDLDefinition.Message.Part.Reference(name, element, multipleNamespaces);
     }
 
     private static TibcoModel.Type.WSDLDefinition.PartnerLinkType parsePartnerLinkType(Element element) {

@@ -69,12 +69,22 @@ public class TibcoModel {
 
             public record Message(String name, List<Part> parts) {
 
-                public record Part(String name, Optional<NameSpaceValue> element, boolean hasMultipleNamespaces) {
+                public sealed interface Part {
 
+                    String name();
+
+                    record Reference(String name, NameSpaceValue element, boolean hasMultipleNamespaces)
+                            implements Part {
+
+                    }
+
+                    record InlineError(String name, String value, String type) implements Part {
+
+                    }
                 }
             }
 
-            public record PortType(String name, String apiPath, Operation operation) {
+            public record PortType(String name, String apiPath, String basePath, Operation operation) {
 
                 public record Operation(String name, Input input, Output output, Collection<Fault> faults) {
 
