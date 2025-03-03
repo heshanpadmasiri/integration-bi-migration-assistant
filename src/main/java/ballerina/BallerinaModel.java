@@ -42,7 +42,7 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
                     sb.append("record {|").append("\n");
                 }
                 for (TypeDesc inclusion : inclusions) {
-                    sb.append(INDENT).append("include ").append(inclusion).append("\n");
+                    sb.append(INDENT).append("*").append(inclusion).append(";").append("\n");
                 }
                 for (RecordField field : fields) {
                     sb.append(INDENT).append(field).append("\n");

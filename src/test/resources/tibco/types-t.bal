@@ -59,11 +59,11 @@ type ActivityExceptionType record {
 };
 
 type ActivityTimedOutExceptionType record {
-    include ActivityExceptionType
+    *ActivityExceptionType;
 };
 
 type DuplicateKeyExceptionType record {
-    include ActivityExceptionType
+    *ActivityExceptionType;
     string duplicateKey;
     string previousJobID;
 };
