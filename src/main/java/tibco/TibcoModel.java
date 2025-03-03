@@ -29,6 +29,8 @@ import java.util.Set;
 public class TibcoModel {
 
     public record Process(String name, Collection<Type> types, ProcessInfo processInfo,
+                          Optional<ProcessInterface> processInterface,
+                          Optional<ProcessTemplateConfigurations> processTemplateConfigurations,
                           Collection<PartnerLink> partnerLinks, Collection<Variable> variables, Scope scope) {
 
         public Process {
@@ -156,6 +158,15 @@ public class TibcoModel {
         }
     }
 
+    public record ProcessInterface(String context, String input, String output) {
+
+    }
+
+    // TODO: fill this
+    public record ProcessTemplateConfigurations() {
+
+    }
+
     public record ProcessInfo(boolean callable, boolean extraErrorVars, Set<Modifier> modifiers, boolean scalable,
                               boolean singleton, boolean stateless, Type type) {
 
@@ -172,7 +183,7 @@ public class TibcoModel {
 
     }
 
-    public record PartnerLink(String name, Binding Binding) {
+    public record PartnerLink(String name, Optional<Binding> binding) {
 
         public record Binding(Path path, Connector connector, Operation operation) {
 
@@ -199,7 +210,7 @@ public class TibcoModel {
                     POST;
 
                     public static Method from(String value) {
-                        if (value.equals("POST")) {
+                        if (value.equalsIgnoreCase("post")) {
                             return POST;
                         }
                         throw new IllegalArgumentException("Unknown method: " + value);
@@ -258,16 +269,40 @@ public class TibcoModel {
                     }
                 }
 
+                record Reply(String name, PartnerLink.Binding.Operation.Method operation, String partnerLink,
+                             String portType, List<InputBinding> inputBindings, Collection<Target> targets)
+                        implements Activity {
+
+                }
+
+                record Empty(String name) implements Activity {
+
+                }
+
+                record Pick(boolean createInstance, OnMessage onMessage) implements Activity {
+
+                    public record OnMessage(PartnerLink.Binding.Operation.Method operation, String partnerLink,
+                                            String portType, String variable, Scope scope) {
+
+                    }
+                }
+
                 record ReceiveEvent(boolean createInstance, float eventTimeout, String variable,
                                     Collection<Source> sources) implements Activity {
 
-                    public record Source(String linkName) {
+                }
+
+                record ExtActivity(Expression expression, String inputVariable, String outputVariable,
+                                   Collection<Source> sources, List<InputBinding> inputBindings,
+                                   CallProcess callProcess) implements Activity {
+
+                    public record CallProcess(String subprocessName) {
 
                     }
                 }
 
                 record ActivityExtension(Expression expression, String inputVariable, Collection<Target> targets,
-                                         Collection<InputBinding> inputBindings, Config config) implements Activity {
+                                         List<InputBinding> inputBindings, Config config) implements Activity {
 
                     public record Config() {
 
