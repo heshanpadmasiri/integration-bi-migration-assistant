@@ -215,10 +215,8 @@ public class CodeGenerator {
     }
 
     private static String constructBallerinaStatements(Statement stmt) {
-        switch (stmt) {
-            case BallerinaStatement balStmt -> {
-                return balStmt.stmt();
-            }
+        return switch (stmt) {
+            case BallerinaStatement balStmt -> balStmt.stmt();
             case IfElseStatement ifElseStmt -> {
                 StringBuilder stringBuilder = new StringBuilder();
                 for (ElseIfClause elseIfClause : ifElseStmt.elseIfClauses()) {
@@ -230,7 +228,7 @@ public class CodeGenerator {
                             ));
                 }
 
-                return String.format("if (%s) { %s } %s else { %s }",
+                yield String.format("if (%s) { %s } %s else { %s }",
                         ifElseStmt.ifCondition().expr(),
                         String.join("", ifElseStmt.ifBody().stream()
                                 .map(CodeGenerator::constructBallerinaStatements).toList()),
@@ -238,14 +236,11 @@ public class CodeGenerator {
                         String.join("", ifElseStmt.elseBody().stream()
                                 .map(CodeGenerator::constructBallerinaStatements).toList()));
             }
-            case BallerinaModel.Return returnStmt -> {
-                return returnStmt.toString();
-            }
-            case BallerinaModel.Comment comment -> {
-                return comment.toString();
-            }
+            case BallerinaModel.Return<?> ignored -> stmt.toString();
+            case BallerinaModel.Comment ignored -> stmt.toString();
+            case BallerinaModel.CallStatement ignored -> stmt.toString();
             case null -> throw new IllegalStateException();
-        }
+        };
     }
 
     private static String constructImportDeclaration(Import importDeclaration) {

@@ -89,7 +89,9 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             ANYDATA("anydata"),
             NIL("()"),
             STRING("string"),
-            INT("int");
+            INT("int"),
+            XML("xml"),
+            ;
 
             private final String name;
 
@@ -165,7 +167,7 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
         @Override
         public String toString() {
-            return "//" + comment;
+            return "//" + comment + "\n";
         }
     }
 
@@ -182,6 +184,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     }
 
+    public record CallStatement(Expression.FunctionCall callExpr) implements Statement {
+
+        @Override
+        public String toString() {
+            return callExpr + ";";
+        }
+    }
+
     public record Return<E extends Expression>(Optional<E> value) implements Statement {
 
         @Override
@@ -193,6 +203,6 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     public record ElseIfClause(BallerinaExpression condition, List<Statement> elseIfBody) {
     }
 
-    public sealed interface Statement permits BallerinaStatement, Comment, IfElseStatement, Return {
+    public sealed interface Statement permits BallerinaStatement, CallStatement, Comment, IfElseStatement, Return {
     }
 }
