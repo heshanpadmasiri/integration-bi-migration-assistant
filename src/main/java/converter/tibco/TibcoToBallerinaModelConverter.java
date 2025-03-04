@@ -305,7 +305,9 @@ public class TibcoToBallerinaModelConverter {
             if (handler == null) {
                 throw new IllegalArgumentException("Link handler not found: " + linkName);
             }
-            return new FunctionContext(cx, cx.getAnnonFunctionName(),
+            String listenerName = cx.getAnnonFunctionName();
+            handler.registerListener(listenerName);
+            return new FunctionContext(cx, listenerName,
                     List.of(new BallerinaModel.Parameter("xml", "input")),
                     "xml");
         }

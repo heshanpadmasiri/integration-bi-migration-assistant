@@ -171,9 +171,11 @@ function annonFunction1(xml input) returns xml {
 }
 
 function FICOScoreTopostOut(xml input) {
+    annonFunction0(input);
 }
 
 function ExperianScoreTopostOut(xml input) {
+    annonFunction1(input);
 }
 
 function scope1(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError { //OnMessageStart
