@@ -37,7 +37,9 @@ public class TibcoToBallerinaModelConverter {
     public static class Context {
 
         private enum Library {
-            HTTP("http");
+            HTTP("http"),
+            XSLT("xslt"),
+            XML_DATA("data.xmldata");
 
             public final String value;
 
@@ -51,10 +53,25 @@ public class TibcoToBallerinaModelConverter {
         private final List<BallerinaModel.Listener> listeners = new ArrayList<>();
         private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
         private final Map<String, TibcoToBallerinaModelConverter.PortHandler> portHandlers = new HashMap<>();
+        private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
         private int annonFunctionCounter = 0;
+        private String toXMLFunction = null;
 
         public String getAnnonFunctionName() {
             return "annonFunction" + annonFunctionCounter++;
+        }
+
+        public String getToXmlFunction() {
+            if (toXMLFunction == null) {
+                addLibraryImport(Library.XML_DATA);
+                String functionName = "toXML";
+                utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
+                        List.of(new BallerinaModel.Parameter("map<anydata>", "data")),
+                        Optional.of("xml"), List.of(new BallerinaModel.Return<>(
+                        Optional.of(new BallerinaModel.Expression.CheckPanic(
+                                new BallerinaModel.Expression.FunctionCall(functionName, new String[]{"data"})))))));
+            }
+            return toXMLFunction;
         }
 
         public boolean addModuleTypeDef(String name, BallerinaModel.ModuleTypeDef moduleTypeDef) {
@@ -169,8 +186,11 @@ public class TibcoToBallerinaModelConverter {
                     Stream.concat(listeners.stream(), textDocument.listeners().stream()).toList();
             List<BallerinaModel.ModuleVar> combinedModuleVars =
                     Stream.concat(constants.values().stream(), textDocument.moduleVars().stream()).toList();
-            List<BallerinaModel.Function> combinedFunctions = Stream.concat(
-                            portHandlers.values().stream().map(PortHandler::toFunction), textDocument.functions().stream())
+            List<BallerinaModel.Function> combinedFunctions =
+                    Stream.concat(utilityFunctions.stream(),
+                                    Stream.concat(
+                                            portHandlers.values().stream().map(PortHandler::toFunction),
+                                            textDocument.functions().stream()))
                     .toList();
             return new BallerinaModel.TextDocument(textDocument.documentName(), combinedImports,
                     textDocument.moduleTypeDefs(), combinedModuleVars, combinedListeners,
@@ -200,6 +220,12 @@ public class TibcoToBallerinaModelConverter {
         private final List<BallerinaModel.Parameter> parameters;
         private final Optional<String> returnType;
         private final Map<String, LinkHandler> linkHandlers = new HashMap<>();
+        private int varCounter = 0;
+        private boolean inputAsXMLReady = false;
+
+        private String getAnnonVarName() {
+            return "var" + varCounter++;
+        }
 
         private FunctionContext(Context cx, String functionName, List<BallerinaModel.Parameter> parameters,
                                 String returnType) {
@@ -214,6 +240,32 @@ public class TibcoToBallerinaModelConverter {
             this.functionName = Context.sanitizes(functionName);
             this.parameters = parameters;
             this.returnType = Optional.empty();
+        }
+
+        public BallerinaModel.Expression.VariableReference getInputAsXml() {
+            if (!inputAsXMLReady) {
+                String toXMLFunction = cx.getToXmlFunction();
+                addVarInitStatement(BallerinaModel.TypeDesc.BuiltinType.XML, "inputXML",
+                        new BallerinaModel.Expression.FunctionCall(toXMLFunction, new String[]{"input"}));
+            }
+            return new BallerinaModel.Expression.VariableReference("inputXML");
+        }
+
+        public BallerinaModel.Expression.VariableReference xsltTransform(
+                BallerinaModel.Expression.VariableReference inputVariable,
+                TibcoModel.Scope.Flow.Activity.Expression.XSLT xslt) {
+            cx.addLibraryImport(Context.Library.XSLT);
+            BallerinaModel.Expression.FunctionCall callExpr =
+                    new BallerinaModel.Expression.FunctionCall("xslt:transform",
+                            new String[]{inputVariable.varName(), "xml`" + xslt.expression() + "`"});
+            BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(callExpr);
+            String varName = getAnnonVarName();
+            addVarInitStatement(BallerinaModel.TypeDesc.BuiltinType.XML, varName, checkPanic);
+            return new BallerinaModel.Expression.VariableReference(varName);
+        }
+
+        public void addVarInitStatement(BallerinaModel.TypeDesc type, String varName, BallerinaModel.Expression expr) {
+            statements.add(new BallerinaModel.VarDeclStatment(type, varName, expr));
         }
 
         public void addStatement(BallerinaModel.Statement statement) {
@@ -242,6 +294,16 @@ public class TibcoToBallerinaModelConverter {
             return new FunctionContext(cx, cx.getAnnonFunctionName(),
                     List.of(new BallerinaModel.Parameter("input", "xml")),
                     "xml");
+        }
+
+        public void sendToTarget(TibcoModel.Scope.Flow.Activity.Target target,
+                                 BallerinaModel.Expression.VariableReference value) {
+            LinkHandler handler = linkHandlers.get(target.linkName());
+            if (handler == null) {
+                throw new IllegalArgumentException("Link handler not found: " + target.linkName());
+            }
+            addStatement(new BallerinaModel.CallStatement(
+                    new BallerinaModel.Expression.FunctionCall(handler.name(), new String[]{value.toString()})));
         }
     }
 
@@ -306,12 +368,22 @@ public class TibcoToBallerinaModelConverter {
                         throw new IllegalStateException("Pick should have been handled");
                 case TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent ->
                         fx.addComment("Receive event" + Objects.toIdentityString(receiveEvent));
-                case TibcoModel.Scope.Flow.Activity.Reply reply ->
-                        fx.addComment("reply" + Objects.toIdentityString(reply));
+                case TibcoModel.Scope.Flow.Activity.Reply reply -> convertReply(fx, reply);
             }
         }
         generatedFunctions.addAll(fx.finalizeFunction());
         return generatedFunctions;
+    }
+
+    private static void convertReply(FunctionContext fx, TibcoModel.Scope.Flow.Activity.Reply reply) {
+        BallerinaModel.Expression.VariableReference input = fx.getInputAsXml();
+        for (TibcoModel.Scope.Flow.Activity.InputBinding transform : reply.inputBindings()) {
+            TibcoModel.Scope.Flow.Activity.Expression.XSLT xslt = transform.xslt();
+            input = fx.xsltTransform(input, xslt);
+        }
+        for (TibcoModel.Scope.Flow.Activity.Target target : reply.targets()) {
+            fx.sendToTarget(target, input);
+        }
     }
 
     private static List<BallerinaModel.Function> convertPickAction(Context cx,

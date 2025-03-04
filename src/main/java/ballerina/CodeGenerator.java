@@ -239,6 +239,7 @@ public class CodeGenerator {
             case BallerinaModel.Return<?> ignored -> stmt.toString();
             case BallerinaModel.Comment ignored -> stmt.toString();
             case BallerinaModel.CallStatement ignored -> stmt.toString();
+            case BallerinaModel.VarDeclStatment ignored -> stmt.toString();
             case null -> throw new IllegalStateException();
         };
     }

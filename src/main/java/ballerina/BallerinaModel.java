@@ -171,7 +171,7 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
         }
     }
 
-    public interface Expression {
+    public sealed interface Expression {
 
         record FunctionCall(String functionName, String[] args) implements Expression {
 
@@ -182,6 +182,21 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
         }
 
+        record VariableReference(String varName) implements Expression {
+
+            @Override
+            public String toString() {
+                return varName;
+            }
+        }
+
+        record CheckPanic(FunctionCall callExpr) implements Expression {
+
+            @Override
+            public String toString() {
+                return "checkpanic " + callExpr;
+            }
+        }
     }
 
     public record CallStatement(Expression.FunctionCall callExpr) implements Statement {
@@ -203,6 +218,15 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     public record ElseIfClause(BallerinaExpression condition, List<Statement> elseIfBody) {
     }
 
-    public sealed interface Statement permits BallerinaStatement, CallStatement, Comment, IfElseStatement, Return {
+    public sealed interface Statement
+            permits BallerinaStatement, CallStatement, Comment, IfElseStatement, Return, VarDeclStatment {
+    }
+
+    public record VarDeclStatment(TypeDesc type, String varName, Expression expr) implements Statement {
+
+        @Override
+        public String toString() {
+            return type + " " + varName + " = " + expr + ";";
+        }
     }
 }

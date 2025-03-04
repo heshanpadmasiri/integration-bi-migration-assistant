@@ -168,7 +168,7 @@ public final class XmlToTibcoModelConverter {
             String tag = getTagNameWithoutNameSpace(each);
             switch (tag) {
                 case "inputBindings", "inputBinding" -> inputBindings.addAll(parseInputBindings(each));
-                case "targets" -> targets.add(parseTarget(each));
+                case "targets" -> targets.addAll(parseTargets(each));
                 default -> throw new ParserException("Unsupported reply element tag: " + tag, element);
             }
         }
@@ -334,6 +334,10 @@ public final class XmlToTibcoModelConverter {
                 parseActivityExtensionConfig(getFirstChildWithTag(activity, "config"));
         return new TibcoModel.Scope.Flow.Activity.ActivityExtension(expression, inputVariable, targets, inputBindings,
                 config);
+    }
+
+    private static Collection<TibcoModel.Scope.Flow.Activity.Target> parseTargets(Element each) {
+        return ElementIterable.of(each).stream().map(XmlToTibcoModelConverter::parseTarget).toList();
     }
 
     private static TibcoModel.Scope.Flow.Activity.Target parseTarget(Element each) {

@@ -339,6 +339,12 @@ public class TibcoModel {
 
                 record InputBinding(Expression expression) {
 
+                    public Expression.XSLT xslt() {
+                        if (expression instanceof Expression.XSLT xslt) {
+                            return xslt;
+                        }
+                        throw new IllegalStateException("Not an XSLT expression: " + expression);
+                    }
                 }
 
             }
