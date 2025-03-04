@@ -50,7 +50,7 @@ public class TibcoToBallerinaModelConverter {
         private final Set<BallerinaModel.Import> imports = new HashSet<>();
         private final List<BallerinaModel.Listener> listeners = new ArrayList<>();
         private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
-        private final Map<String, String> resourceHandler = new HashMap<>();
+        private final Map<String, TibcoToBallerinaModelConverter.PortHandler> portHandlers = new HashMap<>();
 
         public boolean addModuleTypeDef(String name, BallerinaModel.ModuleTypeDef moduleTypeDef) {
             if (moduleTypeDef.typeDesc() instanceof BallerinaModel.TypeDesc.TypeReference(String name1) &&
@@ -87,11 +87,23 @@ public class TibcoToBallerinaModelConverter {
             return new BallerinaModel.TypeDesc.TypeReference(name);
         }
 
-        // FIXME: name must be the combination of basepath and api path sanitized
         public String addPortHandler(String portName, String basePath, String apiPath,
                                      BallerinaModel.TypeDesc inputType,
                                      BallerinaModel.TypeDesc returnType) {
-            return sanitizes(basePath + apiPath) + "Handler";
+            String name = sanitizes(basePath + apiPath) + "Handler";
+            this.portHandlers.put(portName,
+                    new TibcoToBallerinaModelConverter.PortHandler(name, inputType, returnType));
+            return name;
+        }
+
+        FunctionContext registerWithPortHandler(String portname, String listener) {
+            TibcoToBallerinaModelConverter.PortHandler portHandler = portHandlers.get(portname);
+            if (portHandler == null) {
+                throw new IllegalArgumentException("Port handler not found: " + portname);
+            }
+            portHandler.registerListener(listener);
+            BallerinaModel.Parameter input = new BallerinaModel.Parameter(portHandler.inputType.toString(), "input");
+            return new FunctionContext(this, listener, List.of(input), portHandler.returnType.toString());
         }
 
         private static String sanitizes(String name) {
@@ -151,9 +163,12 @@ public class TibcoToBallerinaModelConverter {
                     Stream.concat(listeners.stream(), textDocument.listeners().stream()).toList();
             List<BallerinaModel.ModuleVar> combinedModuleVars =
                     Stream.concat(constants.values().stream(), textDocument.moduleVars().stream()).toList();
+            List<BallerinaModel.Function> combinedFunctions = Stream.concat(
+                            portHandlers.values().stream().map(PortHandler::toFunction), textDocument.functions().stream())
+                    .toList();
             return new BallerinaModel.TextDocument(textDocument.documentName(), combinedImports,
                     textDocument.moduleTypeDefs(), combinedModuleVars, combinedListeners,
-                    textDocument.services(), textDocument.functions(), textDocument.Comments());
+                    textDocument.services(), combinedFunctions, textDocument.Comments());
         }
 
         public String getDefaultHttpListenerRef() {
@@ -210,10 +225,22 @@ public class TibcoToBallerinaModelConverter {
         private final Context cx;
         private final String functionName;
         private final List<BallerinaModel.Statement> statements = new ArrayList<>();
+        private final List<BallerinaModel.Parameter> parameters;
+        private final Optional<String> returnType;
 
-        private FunctionContext(Context cx, String functionName) {
+        private FunctionContext(Context cx, String functionName, List<BallerinaModel.Parameter> parameters,
+                                String returnType) {
             this.cx = cx;
             this.functionName = Context.sanitizes(functionName);
+            this.parameters = parameters;
+            this.returnType = Optional.of(returnType);
+        }
+
+        private FunctionContext(Context cx, String functionName, List<BallerinaModel.Parameter> parameters) {
+            this.cx = cx;
+            this.functionName = Context.sanitizes(functionName);
+            this.parameters = parameters;
+            this.returnType = Optional.empty();
         }
 
         public void addStatement(BallerinaModel.Statement statement) {
@@ -225,7 +252,7 @@ public class TibcoToBallerinaModelConverter {
         }
 
         public BallerinaModel.Function finalizeFunction() {
-            return new BallerinaModel.Function(Optional.empty(), functionName, List.of(), Optional.empty(), statements);
+            return new BallerinaModel.Function(Optional.empty(), functionName, parameters, returnType, statements);
         }
     }
 
@@ -243,7 +270,7 @@ public class TibcoToBallerinaModelConverter {
                 continue;
             }
             if (fx == null) {
-                fx = new FunctionContext(cx, flow.name());
+                fx = new FunctionContext(cx, flow.name(), List.of());
             }
             switch (activity) {
                 case TibcoModel.Scope.Flow.Activity.ActivityExtension activityExtension ->
@@ -271,10 +298,10 @@ public class TibcoToBallerinaModelConverter {
     private static List<BallerinaModel.Function> convertPickAction(Context cx,
                                                                    TibcoModel.Scope.Flow.Activity.Pick pick) {
         TibcoModel.Scope.Flow.Activity.Pick.OnMessage message = pick.onMessage();
-        FunctionContext fx = new FunctionContext(cx, message.scope().name());
+        String functionName = message.scope().name();
         // TODO: register with context for the partner link
         String partnerLink = message.partnerLink();
-
+        FunctionContext fx = cx.registerWithPortHandler(partnerLink, functionName);
         fx.addComment("Pick for partner link: " + partnerLink);
         Collection<TibcoModel.Scope.Flow> flows = message.scope().flows();
         assert flows.size() == 1;
@@ -456,5 +483,28 @@ public class TibcoToBallerinaModelConverter {
     static class PredefinedTypes {
 
         private static final BallerinaModel.TypeDesc.BuiltinType ANYDATA = BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
+    }
+
+    record PortHandler(String name, BallerinaModel.TypeDesc inputType, BallerinaModel.TypeDesc returnType,
+                       Collection<String> registeredListeners) {
+
+        PortHandler(String name, BallerinaModel.TypeDesc inputType, BallerinaModel.TypeDesc returnType) {
+            this(name, inputType, returnType, new ArrayList<>());
+        }
+
+        public void registerListener(String listener) {
+            registeredListeners.add(listener);
+        }
+
+        public BallerinaModel.Function toFunction() {
+            assert registeredListeners.size() == 1 : "multiple listeners not implemented";
+            List<BallerinaModel.Statement> body = registeredListeners.stream()
+                    .map(listener -> new BallerinaModel.Expression.FunctionCall(listener, new String[]{"input"}))
+                    .map(Optional::of)
+                    .map(BallerinaModel.Return::new).map(each -> (BallerinaModel.Statement) each).toList();
+            return new BallerinaModel.Function(Optional.empty(), name,
+                    List.of(new BallerinaModel.Parameter("input", inputType.toString(), Optional.empty()))
+                    , Optional.of(returnType.toString()), body);
+        }
     }
 }

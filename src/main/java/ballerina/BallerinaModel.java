@@ -182,7 +182,7 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     }
 
-    public record Return(Optional<Expression> value) implements Statement {
+    public record Return<E extends Expression>(Optional<E> value) implements Statement {
 
         @Override
         public String toString() {

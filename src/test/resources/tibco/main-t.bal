@@ -89,3 +89,9 @@ service /CreditDetails on LISTENER {
         return CreditDetails_creditdetailsHandler(input);
     }
 }
+
+function CreditDetails_creditdetailsHandler(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError {
+    return scope1(input);
+}
+
+function scope1(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError { //Pick for partner link: creditdetails//Empty activitytibco.TibcoModel$Scope$Flow$Activity$Empty@7956bc14//Empty activitytibco.TibcoModel$Scope$Flow$Activity$Empty@2debeb8e//replytibco.TibcoModel$Scope$Flow$Activity$Reply@27b75362//extActivitytibco.TibcoModel$Scope$Flow$Activity$ExtActivity@7a2d705a//extActivitytibco.TibcoModel$Scope$Flow$Activity$ExtActivity@36d7d517 }
