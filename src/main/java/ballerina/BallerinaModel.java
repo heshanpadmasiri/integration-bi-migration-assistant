@@ -197,6 +197,22 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
                 return "checkpanic " + callExpr;
             }
         }
+
+        record TypeCheckExpression(VariableReference variableReference, TypeDesc td) implements Expression {
+
+            @Override
+            public String toString() {
+                return variableReference.varName + " is " + td;
+            }
+        }
+
+        record TernaryExpression(Expression condition, Expression ifTrue, Expression ifFalse) implements Expression {
+
+            @Override
+            public String toString() {
+                return condition + " ? " + ifTrue + " : " + ifFalse;
+            }
+        }
     }
 
     public record CallStatement(Expression.FunctionCall callExpr) implements Statement {
