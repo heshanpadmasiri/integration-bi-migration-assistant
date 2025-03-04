@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -184,17 +185,101 @@ public class TibcoToBallerinaModelConverter {
                         services.addAll(convertWsdlDefinition(cx, wsdlDefinition));
             }
         }
+        // TODO: generate module variables
+        List<BallerinaModel.ModuleVar> moduleVars = List.of();
+
+        List<BallerinaModel.Function> functions = convertProcessScope(cx, process.scope());
+
         // FIXME: this is wrong(name is not a package name)
         String name = process.name();
         List<BallerinaModel.Import> imports = List.of();
-        List<BallerinaModel.ModuleVar> moduleVars = List.of();
         List<BallerinaModel.Listener> listeners = List.of();
-        List<BallerinaModel.Function> functions = List.of();
         List<String> comments = List.of();
         BallerinaModel.TextDocument textDocument = cx.finish(
                 new BallerinaModel.TextDocument(name + ".bal", imports, moduleTypeDefs, moduleVars, listeners, services,
                         functions, comments));
         return new BallerinaModel.Module(name, List.of(textDocument));
+    }
+
+    private static List<BallerinaModel.Function> convertProcessScope(Context cx, TibcoModel.Scope scope) {
+        return scope.flows().stream().map(flow -> convertFlow(cx, flow)).flatMap(Collection::stream).toList();
+    }
+
+    private static class FunctionContext {
+
+        private final Context cx;
+        private final String functionName;
+        private final List<BallerinaModel.Statement> statements = new ArrayList<>();
+
+        private FunctionContext(Context cx, String functionName) {
+            this.cx = cx;
+            this.functionName = Context.sanitizes(functionName);
+        }
+
+        public void addStatement(BallerinaModel.Statement statement) {
+            statements.add(statement);
+        }
+
+        public void addComment(String comment) {
+            statements.add(new BallerinaModel.Comment(comment));
+        }
+
+        public BallerinaModel.Function finalizeFunction() {
+            return new BallerinaModel.Function(Optional.empty(), functionName, List.of(), Optional.empty(), statements);
+        }
+    }
+
+    private static List<BallerinaModel.Function> convertFlow(Context cx, TibcoModel.Scope.Flow flow) {
+        FunctionContext fx = null;
+        return convertFlowInner(cx, fx, flow);
+    }
+
+    private static List<BallerinaModel.Function> convertFlowInner(Context cx, FunctionContext fx,
+                                                                  TibcoModel.Scope.Flow flow) {
+        List<BallerinaModel.Function> generatedFunctions = new ArrayList<>();
+        for (TibcoModel.Scope.Flow.Activity activity : flow.activities()) {
+            if (activity instanceof TibcoModel.Scope.Flow.Activity.Pick pick) {
+                generatedFunctions.addAll(convertPickAction(cx, pick));
+                continue;
+            }
+            if (fx == null) {
+                fx = new FunctionContext(cx, flow.name());
+            }
+            switch (activity) {
+                case TibcoModel.Scope.Flow.Activity.ActivityExtension activityExtension ->
+                        fx.addComment("Activity extension" + Objects.toIdentityString(activityExtension));
+                case TibcoModel.Scope.Flow.Activity.Empty empty ->
+                        fx.addComment("Empty activity" + Objects.toIdentityString(empty));
+                case TibcoModel.Scope.Flow.Activity.ExtActivity extActivity ->
+                        fx.addComment("extActivity" + Objects.toIdentityString(extActivity));
+                case TibcoModel.Scope.Flow.Activity.Invoke invoke ->
+                        fx.addComment("invoke" + Objects.toIdentityString(invoke));
+                case TibcoModel.Scope.Flow.Activity.Pick ignored ->
+                        throw new IllegalStateException("Pick should have been handled");
+                case TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent ->
+                        fx.addComment("Receive event" + Objects.toIdentityString(receiveEvent));
+                case TibcoModel.Scope.Flow.Activity.Reply reply ->
+                        fx.addComment("reply" + Objects.toIdentityString(reply));
+            }
+        }
+        if (fx != null) {
+            generatedFunctions.add(fx.finalizeFunction());
+        }
+        return generatedFunctions;
+    }
+
+    private static List<BallerinaModel.Function> convertPickAction(Context cx,
+                                                                   TibcoModel.Scope.Flow.Activity.Pick pick) {
+        TibcoModel.Scope.Flow.Activity.Pick.OnMessage message = pick.onMessage();
+        FunctionContext fx = new FunctionContext(cx, message.scope().name());
+        // TODO: register with context for the partner link
+        String partnerLink = message.partnerLink();
+
+        fx.addComment("Pick for partner link: " + partnerLink);
+        Collection<TibcoModel.Scope.Flow> flows = message.scope().flows();
+        assert flows.size() == 1;
+        TibcoModel.Scope.Flow flow = flows.iterator().next();
+        return convertFlowInner(cx, fx, flow);
     }
 
     private static Collection<BallerinaModel.ModuleTypeDef> convertSchema(Context cx, TibcoModel.Type.Schema schema) {

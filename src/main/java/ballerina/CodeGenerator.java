@@ -241,7 +241,10 @@ public class CodeGenerator {
             case BallerinaModel.Return returnStmt -> {
                 return returnStmt.toString();
             }
-            case null, default -> throw new IllegalStateException();
+            case BallerinaModel.Comment comment -> {
+                return comment.toString();
+            }
+            case null -> throw new IllegalStateException();
         }
     }
 

@@ -161,6 +161,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
                                   List<ElseIfClause> elseIfClauses, List<Statement> elseBody) implements Statement {
     }
 
+    public record Comment(String comment) implements Statement {
+
+        @Override
+        public String toString() {
+            return "//" + comment;
+        }
+    }
+
     public interface Expression {
 
         record FunctionCall(String functionName, String[] args) implements Expression {
@@ -185,6 +193,6 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     public record ElseIfClause(BallerinaExpression condition, List<Statement> elseIfBody) {
     }
 
-    public sealed interface Statement permits BallerinaStatement, IfElseStatement, Return {
+    public sealed interface Statement permits BallerinaStatement, Comment, IfElseStatement, Return {
     }
 }
