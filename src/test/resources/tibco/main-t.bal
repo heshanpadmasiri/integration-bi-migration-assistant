@@ -86,5 +86,6 @@ listener http:Listener LISTENER = new (8080, {host: "localhost"});
 
 service /CreditDetails on LISTENER {
     resource function post creditdetails(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError {
+        return CreditDetails_creditdetailsHandler(input);
     }
 }

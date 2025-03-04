@@ -49,6 +49,7 @@ public class TibcoToBallerinaModelConverter {
         private final Set<BallerinaModel.Import> imports = new HashSet<>();
         private final List<BallerinaModel.Listener> listeners = new ArrayList<>();
         private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
+        private final Map<String, String> resourceHandler = new HashMap<>();
 
         public boolean addModuleTypeDef(String name, BallerinaModel.ModuleTypeDef moduleTypeDef) {
             if (moduleTypeDef.typeDesc() instanceof BallerinaModel.TypeDesc.TypeReference(String name1) &&
@@ -61,7 +62,7 @@ public class TibcoToBallerinaModelConverter {
 
         public BallerinaModel.TypeDesc getTypeByName(String name) {
             // TODO: how to handle names spaces
-            name = sanities(XmlToTibcoModelConverter.getTagNameWithoutNameSpace(name));
+            name = sanitizes(XmlToTibcoModelConverter.getTagNameWithoutNameSpace(name));
             if (moduleTypeDefs.containsKey(name)) {
                 return new BallerinaModel.TypeDesc.TypeReference(name);
             }
@@ -85,12 +86,23 @@ public class TibcoToBallerinaModelConverter {
             return new BallerinaModel.TypeDesc.TypeReference(name);
         }
 
-        private static String sanities(String name) {
-            return name.replaceAll("[^a-zA-Z0-9]", "_");
+        // FIXME: name must be the combination of basepath and api path sanitized
+        public String addPortHandler(String portName, String basePath, String apiPath,
+                                     BallerinaModel.TypeDesc inputType,
+                                     BallerinaModel.TypeDesc returnType) {
+            return sanitizes(basePath + apiPath) + "Handler";
+        }
+
+        private static String sanitizes(String name) {
+            String sanitized = name.replaceAll("[^a-zA-Z0-9]", "_");
+            while (!Character.isAlphabetic(sanitized.charAt(0))) {
+                sanitized = sanitized.substring(1);
+            }
+            return sanitized;
         }
 
         public String declareConstant(String name, String valueRepr, String type) {
-            name = sanities(name);
+            name = sanitizes(name);
             BallerinaModel.TypeDesc td = getTypeByName(type);
             assert td == BallerinaModel.TypeDesc.BuiltinType.STRING;
             String expr = "\"" + valueRepr + "\"";
@@ -253,12 +265,13 @@ public class TibcoToBallerinaModelConverter {
         }
         String apiPath = portType.apiPath();
         List<BallerinaModel.Resource> resources =
-                List.of(convertOperation(cx, apiPath, messageTypes, portType.operation()));
+                List.of(convertOperation(cx, portType.name(), basePath, apiPath, messageTypes, portType.operation()));
         List<String> listenerRefs = List.of(cx.getDefaultHttpListenerRef());
         return new BallerinaModel.Service(basePath, listenerRefs, resources, List.of(), List.of(), List.of());
     }
 
-    private static BallerinaModel.Resource convertOperation(Context cx, String apiPath,
+    private static BallerinaModel.Resource convertOperation(Context cx, String portName, String basePath,
+                                                            String apiPath,
                                                             Map<String, String> messageTypes,
                                                             TibcoModel.Type.WSDLDefinition.PortType.Operation operation) {
         String resourceMethodName = operation.name();
@@ -275,7 +288,9 @@ public class TibcoToBallerinaModelConverter {
         BallerinaModel.TypeDesc returnType = returnTypeMembers.size() == 1
                 ? returnTypeMembers.getFirst()
                 : new BallerinaModel.TypeDesc.UnionTypeDesc(returnTypeMembers);
-        List<BallerinaModel.Statement> body = List.of();
+        String portHandler = cx.addPortHandler(portName, basePath, apiPath, inputType, returnType);
+        List<BallerinaModel.Statement> body = List.of(new BallerinaModel.Return(Optional.of(
+                new BallerinaModel.Expression.FunctionCall(portHandler, new String[]{"input"}))));
         return new BallerinaModel.Resource(resourceMethodName, path, parameters, Optional.of(returnType.toString()),
                 body);
     }

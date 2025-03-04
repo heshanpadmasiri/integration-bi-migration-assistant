@@ -215,28 +215,33 @@ public class CodeGenerator {
     }
 
     private static String constructBallerinaStatements(Statement stmt) {
-        if (stmt instanceof BallerinaStatement balStmt) {
-            return balStmt.stmt();
-        } else if (stmt instanceof IfElseStatement ifElseStmt) {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (ElseIfClause elseIfClause : ifElseStmt.elseIfClauses()) {
-                stringBuilder.append(
-                        String.format("else if(%s) { %s }",
-                                elseIfClause.condition().expr(),
-                                String.join("", elseIfClause.elseIfBody().stream()
-                                        .map(CodeGenerator::constructBallerinaStatements).toList())
-                        ));
+        switch (stmt) {
+            case BallerinaStatement balStmt -> {
+                return balStmt.stmt();
             }
+            case IfElseStatement ifElseStmt -> {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (ElseIfClause elseIfClause : ifElseStmt.elseIfClauses()) {
+                    stringBuilder.append(
+                            String.format("else if(%s) { %s }",
+                                    elseIfClause.condition().expr(),
+                                    String.join("", elseIfClause.elseIfBody().stream()
+                                            .map(CodeGenerator::constructBallerinaStatements).toList())
+                            ));
+                }
 
-            return String.format("if (%s) { %s } %s else { %s }",
-                    ifElseStmt.ifCondition().expr(),
-                    String.join("", ifElseStmt.ifBody().stream()
-                            .map(CodeGenerator::constructBallerinaStatements).toList()),
-                    stringBuilder,
-                    String.join("", ifElseStmt.elseBody().stream()
-                            .map(CodeGenerator::constructBallerinaStatements).toList()));
-        } else {
-            throw new IllegalStateException();
+                return String.format("if (%s) { %s } %s else { %s }",
+                        ifElseStmt.ifCondition().expr(),
+                        String.join("", ifElseStmt.ifBody().stream()
+                                .map(CodeGenerator::constructBallerinaStatements).toList()),
+                        stringBuilder,
+                        String.join("", ifElseStmt.elseBody().stream()
+                                .map(CodeGenerator::constructBallerinaStatements).toList()));
+            }
+            case BallerinaModel.Return returnStmt -> {
+                return returnStmt.toString();
+            }
+            case null, default -> throw new IllegalStateException();
         }
     }
 

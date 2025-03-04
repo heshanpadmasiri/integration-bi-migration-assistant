@@ -91,10 +91,12 @@ listener http:Listener LISTENER = new (8080, {host: "localhost"});
 
 service /y54cuadtcxtfstqs3rux2gfdaxppoqgc on LISTENER {
     resource function post creditscore(GiveNewSchemaNameHere input) returns SuccessSchema|http:NotFound|http:InternalServerError|client_404_RecordNotFound {
+        return y54cuadtcxtfstqs3rux2gfdaxppoqgc_creditscoreHandler(input);
     }
 }
 
 service / on LISTENER {
     resource function post creditscore(GiveNewSchemaNameHere input) returns SuccessSchema|http:NotFound|http:InternalServerError {
+        return creditscoreHandler(input);
     }
 }

@@ -161,9 +161,30 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
                                   List<ElseIfClause> elseIfClauses, List<Statement> elseBody) implements Statement {
     }
 
+    public interface Expression {
+
+        record FunctionCall(String functionName, String[] args) implements Expression {
+
+            @Override
+            public String toString() {
+                return functionName + "(" + String.join(", ", args) + ")";
+            }
+
+        }
+
+    }
+
+    public record Return(Optional<Expression> value) implements Statement {
+
+        @Override
+        public String toString() {
+            return value.map(expression -> "return " + expression + ";").orElse("return;");
+        }
+    }
+
     public record ElseIfClause(BallerinaExpression condition, List<Statement> elseIfBody) {
     }
 
-    public sealed interface Statement permits BallerinaStatement, IfElseStatement {
+    public sealed interface Statement permits BallerinaStatement, IfElseStatement, Return {
     }
 }
