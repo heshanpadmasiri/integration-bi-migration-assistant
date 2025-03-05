@@ -24,6 +24,7 @@ import java.util.Optional;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
+import converter.tibco.analyzer.AnalysisResult;
 import tibco.TibcoModel;
 
 class ActivityContext {
@@ -76,16 +77,8 @@ class ActivityContext {
     }
 
     public String functionName() {
-        String namePrefix = switch (activity) {
-            case TibcoModel.Scope.Flow.Activity.ActivityExtension ignored -> "activity_ext";
-            case TibcoModel.Scope.Flow.Activity.Empty ignored -> "empty";
-            case TibcoModel.Scope.Flow.Activity.ExtActivity ignored -> "ext_activity";
-            case TibcoModel.Scope.Flow.Activity.Invoke ignored -> "invoke";
-            case TibcoModel.Scope.Flow.Activity.Pick ignored -> "pick";
-            case TibcoModel.Scope.Flow.Activity.ReceiveEvent ignored -> "receive_event";
-            case TibcoModel.Scope.Flow.Activity.Reply ignored -> "reply";
-        };
-        return namePrefix + "_" + index;
+        AnalysisResult.ActivityData activityData = processContext.analysisResult.from(activity);
+        return activityData.functionName();
     }
 
     public List<BallerinaModel.Parameter> parameters() {

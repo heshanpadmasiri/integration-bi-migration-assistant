@@ -104,6 +104,19 @@ public final class AnalysisResult {
         return activityData.keySet();
     }
 
+    public Collection<TibcoModel.Scope.Flow.Link> links() {
+        return destinationMap.keySet();
+    }
+
+    public Collection<TibcoModel.Scope.Flow.Link> destinations(TibcoModel.Scope.Flow.Activity activity) {
+        if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithTargets targets) {
+            return targets.targets().stream().map(TibcoModel.Scope.Flow.Activity.Target::linkName)
+                    .map(TibcoModel.Scope.Flow.Link::new)
+                    .toList();
+        }
+        return List.of();
+    }
+
     public record LinkData(String workerName, Collection<TibcoModel.Scope.Flow.Activity> sourceActivities,
                            Collection<TibcoModel.Scope.Flow.Activity> destinationActivities) {
 

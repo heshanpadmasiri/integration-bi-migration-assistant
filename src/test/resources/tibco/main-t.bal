@@ -92,17 +92,17 @@ service /CreditDetails on LISTENER {
     }
 }
 
-function empty_0(xml input) returns xml {
+function empty(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
     return inputXML;
 }
 
-function empty_1(xml input) returns xml {
+function empty_2(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
     return inputXML;
 }
 
-function ext_activity_2(xml input) returns xml {
+function extActivity(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
     xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
@@ -135,12 +135,7 @@ function ext_activity_2(xml input) returns xml {
     creditapp_module_EquifaxScore_start(var0);
 }
 
-function pick_3(xml input) returns xml {
-    xml inputXML = input is xml ? input : toXML(input);
-    return inputXML;
-}
-
-function reply_4(xml input) returns xml {
+function reply(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
     xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns1="http://xmlns.example.com/20180827160122PLT" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" xmlns:tns2="http://tns.tibco.com/bw/json/1535671685533" version="2.0">
@@ -190,7 +185,7 @@ function reply_4(xml input) returns xml {
     return var1;
 }
 
-function ext_activity_5(xml input) returns xml {
+function extActivity_5(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
     xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns3="http://xmlns.example.com/Creditscore/parameters" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
@@ -223,11 +218,32 @@ function ext_activity_5(xml input) returns xml {
     creditapp_module_ExperianScore_start(var0);
 }
 
+function pick(xml input) returns xml {
+    xml inputXML = input is xml ? input : toXML(input);
+    return inputXML;
+}
+
 public function creditapp_module_MainProcess_start(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError {
     xml inputXML = toXML(input);
     xml xmlResult = process_creditapp_module_MainProcess(inputXML);
     CreditScoreSuccessSchema|http:NotFound|http:InternalServerError result = typeConversion_0(xmlResult);
     return result;
+}
+
+function process_creditapp_module_MainProcess(xml input) returns xml {
+    worker start_worker {
+        xml output = reply(input);
+        output -> FICOScoreTopostOut;
+        output -> ExperianScoreTopostOut;
+    }
+    worker ExperianScoreTopostOut {
+        xml v0 = <- start_worker;
+        xml output0 = extActivity_5(v0);
+    }
+    worker FICOScoreTopostOut {
+        xml v0 = <- start_worker;
+        xml output0 = extActivity(v0);
+    }
 }
 
 function toXML(map<anydata> data) returns xml {

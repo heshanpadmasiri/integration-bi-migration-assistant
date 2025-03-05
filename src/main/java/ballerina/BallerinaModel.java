@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-
 public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules) {
 
     public record DefaultPackage(String org, String name, String version) {
@@ -154,6 +153,11 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     }
 
     public record BallerinaStatement(String stmt) implements Statement {
+
+        @Override
+        public String toString() {
+            return stmt;
+        }
     }
 
     public record BallerinaExpression(String expr) {
@@ -235,7 +239,8 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     }
 
     public sealed interface Statement
-            permits BallerinaStatement, CallStatement, Comment, IfElseStatement, Return, VarDeclStatment {
+            permits BallerinaStatement, CallStatement, Comment, IfElseStatement, NamedWorkerDecl, Return,
+            VarDeclStatment {
     }
 
     public record VarDeclStatment(TypeDesc type, String varName, Expression expr) implements Statement {
@@ -243,6 +248,40 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
         @Override
         public String toString() {
             return type + " " + varName + " = " + expr + ";";
+        }
+    }
+
+    // This is wrong but should be good enough for our uses
+    public sealed interface Action extends Expression {
+
+        record WorkerSendAction(Expression expression, String peer) implements Action {
+
+            @Override
+            public String toString() {
+                return expression.toString() + " -> " + peer;
+            }
+        }
+
+        record WorkerReceiveAction(String peer) implements Action {
+
+            @Override
+            public String toString() {
+                return "<- " + peer;
+            }
+        }
+    }
+
+    public record NamedWorkerDecl(String name, List<Statement> body) implements Statement {
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("worker ").append(name).append(" {\n");
+            for (Statement statement : body) {
+                sb.append(statement).append("\n");
+            }
+            sb.append("}");
+            return sb.toString();
         }
     }
 }
