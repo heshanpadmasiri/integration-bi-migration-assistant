@@ -20,6 +20,7 @@ package converter.tibco;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,6 +60,7 @@ public class TibcoToBallerinaModelConverter {
                 .forEach(functions::add);
         functions.add(generateStartFunction(cx, cx.analysisResult.startActivity(process)));
         functions.add(generateProcessFunction(cx, process));
+        functions.sort(Comparator.comparing(BallerinaModel.Function::methodName));
 
         var textDocument = cx.serialize(moduleTypeDefs, service, functions);
         String name = process.name();

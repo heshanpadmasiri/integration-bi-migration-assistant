@@ -174,7 +174,7 @@ class TypeConverter {
         BallerinaModel.TypeDesc returnType = returnTypeMembers.size() == 1
                 ? returnTypeMembers.getFirst()
                 : new BallerinaModel.TypeDesc.UnionTypeDesc(returnTypeMembers);
-        cx.processReturnType = returnType;
+        cx.processReturnType = cx.getTypeByName(messageTypes.get(operation.output().message().value()));
         String portHandler = cx.getProcessStartFunctionName();
         List<BallerinaModel.Statement> body = List.of(new BallerinaModel.Return<>(Optional.of(
                 new BallerinaModel.Expression.FunctionCall(portHandler, new String[]{"input"}))));
