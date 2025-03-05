@@ -20,6 +20,7 @@ package converter.tibco;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import ballerina.BallerinaModel;
 import tibco.TibcoModel;
@@ -48,16 +49,51 @@ public class TibcoToBallerinaModelConverter {
                 }
             }
         }
-        // FIXME: handle start activity
         // TODO: generate module variables
 
         List<BallerinaModel.Function> functions = new ArrayList<>();
         cx.analysisResult.activities().stream()
                 .map(activity -> ActivityConverter.convertActivity(cx, activity))
                 .forEach(functions::add);
+        // FIXME: handle start activity
+        functions.add(generateStartFunction(cx, cx.analysisResult.startActivity(process)));
 
         var textDocument = cx.serialize(moduleTypeDefs, service, functions);
         String name = process.name();
         return new BallerinaModel.Module(name, List.of(textDocument));
+    }
+
+    private static BallerinaModel.Function generateStartFunction(ProcessContext cx,
+                                                                 TibcoModel.Scope.Flow.Activity startActivity) {
+
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        BallerinaModel.TypeDesc inputType = cx.processInputType;
+        BallerinaModel.TypeDesc returnType = cx.processReturnType;
+        String inputVariable = "input";
+        BallerinaModel.Expression.FunctionCall toXMLCall =
+                new BallerinaModel.Expression.FunctionCall(cx.getToXmlFunction(),
+                        new String[]{inputVariable});
+        String inputXML = "inputXML";
+        BallerinaModel.VarDeclStatment inputXMLVar =
+                new BallerinaModel.VarDeclStatment(BallerinaModel.TypeDesc.BuiltinType.XML,
+                        inputXML, toXMLCall);
+        body.add(inputXMLVar);
+        String processFunction = cx.getProcessFunction();
+        BallerinaModel.VarDeclStatment xmlResult =
+                new BallerinaModel.VarDeclStatment(BallerinaModel.TypeDesc.BuiltinType.XML,
+                        "xmlResult",
+                        new BallerinaModel.Expression.FunctionCall(processFunction, new String[]{inputXML}));
+        body.add(xmlResult);
+        String convertToTypeFunction = cx.getConvertToTypeFunction(returnType);
+        BallerinaModel.VarDeclStatment result =
+                new BallerinaModel.VarDeclStatment(returnType, "result",
+                        new BallerinaModel.Expression.FunctionCall(convertToTypeFunction, new String[]{"xmlResult"}));
+        body.add(result);
+        BallerinaModel.Return<BallerinaModel.Expression.VariableReference> returnStatement =
+                new BallerinaModel.Return<>(Optional.of(new BallerinaModel.Expression.VariableReference("result")));
+        body.add(returnStatement);
+        return new BallerinaModel.Function(Optional.of("public"), cx.getProcessStartFunctionName(),
+                List.of(new BallerinaModel.Parameter(inputType.toString(), inputVariable)),
+                Optional.of(returnType.toString()), body);
     }
 }

@@ -135,37 +135,9 @@ function ext_activity_2(xml input) returns xml {
     creditapp_module_EquifaxScore_start(var0);
 }
 
-function ext_activity_3(xml input) returns xml {
+function pick_3(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
-    xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns3="http://xmlns.example.com/Creditscore/parameters" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
-    <xsl:param name="post.item"/>
-    <xsl:template name="ExperianScore-input" match="/">
-        <tns:GiveNewSchemaNameHere>
-            <xsl:if test="$post.item/tns:DOB">
-                <tns:DOB>
-                    <xsl:value-of select="$post.item/tns:DOB"/>
-                </tns:DOB>
-            </xsl:if>
-            <xsl:if test="$post.item/tns:FirstName">
-                <tns:FirstName>
-                    <xsl:value-of select="$post.item/tns:FirstName"/>
-                </tns:FirstName>
-            </xsl:if>
-            <xsl:if test="$post.item/tns:LastName">
-                <tns:LastName>
-                    <xsl:value-of select="$post.item/tns:LastName"/>
-                </tns:LastName>
-            </xsl:if>
-            <xsl:if test="$post.item/tns:SSN">
-                <tns:SSN>
-                    <xsl:value-of select="$post.item/tns:SSN"/>
-                </tns:SSN>
-            </xsl:if>
-        </tns:GiveNewSchemaNameHere>
-    </xsl:template>
-</xsl:stylesheet>`);
-    creditapp_module_ExperianScore_start(var0);
+    return inputXML;
 }
 
 function reply_4(xml input) returns xml {
@@ -218,7 +190,46 @@ function reply_4(xml input) returns xml {
     return var1;
 }
 
-function pick_5(xml input) returns xml {
+function ext_activity_5(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
-    return inputXML;
+    xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns3="http://xmlns.example.com/Creditscore/parameters" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
+    <xsl:param name="post.item"/>
+    <xsl:template name="ExperianScore-input" match="/">
+        <tns:GiveNewSchemaNameHere>
+            <xsl:if test="$post.item/tns:DOB">
+                <tns:DOB>
+                    <xsl:value-of select="$post.item/tns:DOB"/>
+                </tns:DOB>
+            </xsl:if>
+            <xsl:if test="$post.item/tns:FirstName">
+                <tns:FirstName>
+                    <xsl:value-of select="$post.item/tns:FirstName"/>
+                </tns:FirstName>
+            </xsl:if>
+            <xsl:if test="$post.item/tns:LastName">
+                <tns:LastName>
+                    <xsl:value-of select="$post.item/tns:LastName"/>
+                </tns:LastName>
+            </xsl:if>
+            <xsl:if test="$post.item/tns:SSN">
+                <tns:SSN>
+                    <xsl:value-of select="$post.item/tns:SSN"/>
+                </tns:SSN>
+            </xsl:if>
+        </tns:GiveNewSchemaNameHere>
+    </xsl:template>
+</xsl:stylesheet>`);
+    creditapp_module_ExperianScore_start(var0);
+}
+
+public function creditapp_module_MainProcess_start(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError {
+    xml inputXML = toXML(input);
+    xml xmlResult = process_creditapp_module_MainProcess(inputXML);
+    CreditScoreSuccessSchema|http:NotFound|http:InternalServerError result = typeConversion_0(xmlResult);
+    return result;
+}
+
+function toXML(map<anydata> data) returns xml {
+    return checkpanic xmldata:toXml(data);
 }

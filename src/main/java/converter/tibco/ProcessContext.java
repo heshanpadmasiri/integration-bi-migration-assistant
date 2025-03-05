@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import ballerina.BallerinaModel;
 import converter.tibco.analyzer.AnalysisResult;
@@ -38,20 +39,18 @@ class ProcessContext {
     private final List<BallerinaModel.Listener> listeners = new ArrayList<>();
     private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
     private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
-    private int annonFunctionCounter = 0;
+    private final Map<BallerinaModel.TypeDesc, String> typeConversionFunction = new HashMap<>();
     public int acitivityCounter = 0;
     private String toXMLFunction = null;
     public final TibcoModel.Process process;
+    public BallerinaModel.TypeDesc processInputType;
+    public BallerinaModel.TypeDesc processReturnType;
 
     public final AnalysisResult analysisResult;
 
     ProcessContext(TibcoModel.Process process) {
         this.process = process;
         this.analysisResult = ModelAnalyser.analyseProcess(process);
-    }
-
-    String getAnnonFunctionName() {
-        return "annonFunction" + annonFunctionCounter++;
     }
 
     String getToXmlFunction() {
@@ -160,12 +159,24 @@ class ProcessContext {
                                           BallerinaModel.Service processService,
                                           List<BallerinaModel.Function> functions) {
         String name = ConversionUtils.sanitizes(process.name()) + ".bal";
+        List<BallerinaModel.Function> combinedFunctions =
+                Stream.concat(functions.stream(), utilityFunctions.stream()).toList();
         return new BallerinaModel.TextDocument(name, imports.stream().toList(), typeDefs,
-                constants.values().stream().toList(), listeners.stream().toList(), List.of(processService), functions,
-                List.of());
+                constants.values().stream().toList(), listeners.stream().toList(), List.of(processService),
+                combinedFunctions, List.of());
     }
 
     public String getProcessStartFunctionName() {
         return ConversionUtils.sanitizes(process.name()) + "_start";
+    }
+
+    public String getProcessFunction() {
+        return "process_" + ConversionUtils.sanitizes(process.name());
+    }
+
+    public String getConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
+        // FIXME: create a utility function
+        return typeConversionFunction.computeIfAbsent(targetType,
+                ignored -> "typeConversion_" + typeConversionFunction.size());
     }
 }
