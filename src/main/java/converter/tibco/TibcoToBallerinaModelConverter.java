@@ -75,6 +75,17 @@ public class TibcoToBallerinaModelConverter {
         List<BallerinaModel.Statement> body = new ArrayList<>();
         body.add(generateWorkerForStartAction(cx, startActivity));
         analysisResult.links().stream().map(link -> generateLink(cx, link)).forEach(body::add);
+        // Shouldn't this always be one?
+        List<String> resultVars = new ArrayList<>();
+        int resultCount = 0;
+        for (String worker : cx.terminateWorkers) {
+            String resultName = "result" + resultCount++;
+            resultVars.add(resultName);
+            BallerinaModel.VarDeclStatment inputVarDecl = receiveVarFromPeer(worker, resultName);
+            body.add(inputVarDecl);
+        }
+        String resultVar = String.join(" + ", resultVars);
+        body.add(new BallerinaModel.BallerinaStatement("return " + resultVar + ";"));
         return new BallerinaModel.Function(Optional.empty(), name,
                 List.of(new BallerinaModel.Parameter(XML.toString(), "input")),
                 Optional.of(XML.toString()), body);
@@ -138,6 +149,7 @@ public class TibcoToBallerinaModelConverter {
         var analysisResult = cx.analysisResult;
         int inputCount = 0;
         Collection<TibcoModel.Scope.Flow.Activity> inputActivities = analysisResult.sources(link);
+        AnalysisResult.LinkData linkData = analysisResult.from(link);
         for (TibcoModel.Scope.Flow.Activity activity : inputActivities) {
             Collection<TibcoModel.Scope.Flow.Link> linkPrev = analysisResult.sources(activity);
             if (linkPrev.isEmpty()) {
@@ -170,14 +182,19 @@ public class TibcoToBallerinaModelConverter {
                     new BallerinaModel.VarDeclStatment(XML, outputVarName, callExpr);
             body.add(outputVarDecl);
             Collection<TibcoModel.Scope.Flow.Link> destinationLinks = analysisResult.destinations(destinations);
-            for (TibcoModel.Scope.Flow.Link destinationLink : destinationLinks) {
-                AnalysisResult.LinkData linkData = analysisResult.from(destinationLink);
+            if (destinationLinks.isEmpty()) {
+                cx.terminateWorkers.add(linkData.workerName());
                 BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
-                        new BallerinaModel.Expression.VariableReference(outputVarName), linkData.workerName());
+                        new BallerinaModel.Expression.VariableReference(outputVarName), "function");
+                body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
+            }
+            for (TibcoModel.Scope.Flow.Link destinationLink : destinationLinks) {
+                AnalysisResult.LinkData destinationData = analysisResult.from(destinationLink);
+                BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
+                        new BallerinaModel.Expression.VariableReference(outputVarName), destinationData.workerName());
                 body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
             }
         }
-        AnalysisResult.LinkData linkData = analysisResult.from(link);
         return new BallerinaModel.NamedWorkerDecl(linkData.workerName(), body);
     }
 

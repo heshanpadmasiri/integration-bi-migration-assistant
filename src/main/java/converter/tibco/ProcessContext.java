@@ -42,6 +42,7 @@ class ProcessContext {
     private final Map<BallerinaModel.TypeDesc, String> typeConversionFunction = new HashMap<>();
     public int acitivityCounter = 0;
     public String startWorkerName;
+    public final List<String> terminateWorkers = new ArrayList<>();
     private String toXMLFunction = null;
     public final TibcoModel.Process process;
     public BallerinaModel.TypeDesc processInputType;

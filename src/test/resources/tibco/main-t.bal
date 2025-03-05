@@ -189,11 +189,16 @@ function process_creditapp_module_MainProcess(xml input) returns xml {
     worker ExperianScoreTopostOut {
         xml v0 = <- start_worker;
         xml output0 = extActivity_5(v0);
+        output0 -> function;
     }
     worker FICOScoreTopostOut {
         xml v0 = <- start_worker;
         xml output0 = extActivity(v0);
+        output0 -> function;
     }
+    xml result0 = <- ExperianScoreTopostOut;
+    xml result1 = <- FICOScoreTopostOut;
+    return result0 + result1;
 }
 
 function reply(xml input) returns xml {
