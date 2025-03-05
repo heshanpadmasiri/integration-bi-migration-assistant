@@ -18,16 +18,27 @@
 
 package converter.tibco;
 
+import java.util.Collection;
+
 public final class ConversionUtils {
 
     private ConversionUtils() {
     }
 
-    static String sanitizes(String name) {
+    public static String sanitizes(String name) {
         String sanitized = name.replaceAll("[^a-zA-Z0-9]", "_");
         while (!Character.isAlphabetic(sanitized.charAt(0))) {
             sanitized = sanitized.substring(1);
         }
         return sanitized;
+    }
+
+    public static String getSanitizedUniqueName(String name, Collection<String> allocatedNames) {
+        String sanitized = sanitizes(name);
+        String nameToCheck = sanitized;
+        if (allocatedNames.contains(nameToCheck)) {
+            nameToCheck = sanitized + "_" + allocatedNames.size();
+        }
+        return nameToCheck;
     }
 }

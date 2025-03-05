@@ -272,6 +272,17 @@ public class TibcoModel {
 
             public sealed interface Activity {
 
+                sealed interface ActivityWithSources extends Activity {
+
+                    Collection<Source> sources();
+                }
+
+                sealed interface ActivityWithTargets extends Activity {
+
+                    Collection<Target> targets();
+
+                }
+
                 sealed interface Expression {
 
                     record XSLT(String expression) implements Expression {
@@ -281,7 +292,7 @@ public class TibcoModel {
 
                 record Reply(String name, PartnerLink.Binding.Operation.Method operation, String partnerLink,
                              String portType, List<InputBinding> inputBindings, Collection<Target> targets)
-                        implements Activity {
+                        implements Activity, ActivityWithTargets {
 
                 }
 
@@ -298,13 +309,13 @@ public class TibcoModel {
                 }
 
                 record ReceiveEvent(boolean createInstance, float eventTimeout, String variable,
-                                    Collection<Source> sources) implements Activity {
+                                    Collection<Source> sources) implements Activity, ActivityWithSources {
 
                 }
 
                 record ExtActivity(Expression expression, String inputVariable, String outputVariable,
                                    Collection<Source> sources, List<InputBinding> inputBindings,
-                                   CallProcess callProcess) implements Activity {
+                                   CallProcess callProcess) implements Activity, ActivityWithSources {
 
                     public record CallProcess(String subprocessName) {
 
@@ -312,7 +323,8 @@ public class TibcoModel {
                 }
 
                 record ActivityExtension(Expression expression, String inputVariable, Collection<Target> targets,
-                                         List<InputBinding> inputBindings, Config config) implements Activity {
+                                         List<InputBinding> inputBindings, Config config)
+                        implements Activity, ActivityWithTargets {
 
                     public record Config() {
 
@@ -321,7 +333,7 @@ public class TibcoModel {
 
                 record Invoke(String inputVariable, String outputVariable, Operation operation, String partnerLink,
                               List<InputBinding> inputBindings, Collection<Target> targets, Collection<Source> sources)
-                        implements Activity {
+                        implements Activity, ActivityWithSources, ActivityWithTargets {
 
                     public enum Operation {
                         POST

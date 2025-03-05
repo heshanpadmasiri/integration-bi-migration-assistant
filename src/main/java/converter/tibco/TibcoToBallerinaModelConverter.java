@@ -27,6 +27,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
+
 import ballerina.BallerinaModel;
 import tibco.TibcoModel;
 
@@ -283,7 +285,7 @@ public class TibcoToBallerinaModelConverter {
                 }
                 case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest ignored -> {
                     // FIXME: handle this properly
-                    rest = Optional.of(PredefinedTypes.ANYDATA);
+                    rest = Optional.of(ANYDATA);
                 }
             }
         }
@@ -315,11 +317,6 @@ public class TibcoToBallerinaModelConverter {
             }
         }).distinct().toList();
         return new BallerinaModel.TypeDesc.UnionTypeDesc(types);
-    }
-
-    static class PredefinedTypes {
-
-        private static final BallerinaModel.TypeDesc.BuiltinType ANYDATA = BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
     }
 
     record LinkHandler(String name, BallerinaModel.TypeDesc inputType, Collection<String> registeredListeners) {
