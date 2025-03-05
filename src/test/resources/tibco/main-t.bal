@@ -88,19 +88,21 @@ listener http:Listener LISTENER = new (8080, {host: "localhost"});
 
 service /CreditDetails on LISTENER {
     resource function post creditdetails(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError {
-        return CreditDetails_creditdetailsHandler(input);
+        return creditapp_module_MainProcess_start(input);
     }
 }
 
-function toXML(map<anydata> data) returns xml {
-    return checkpanic xmldata:toXml(data);
+function empty_0(xml input) returns xml {
+    xml inputXML = input is xml ? input : toXML(input);
+    return inputXML;
 }
 
-function CreditDetails_creditdetailsHandler(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError {
-    return scope1(input);
+function empty_1(xml input) returns xml {
+    xml inputXML = input is xml ? input : toXML(input);
+    return inputXML;
 }
 
-function annonFunction0(xml input) returns xml {
+function ext_activity_2(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
     xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
@@ -130,12 +132,10 @@ function annonFunction0(xml input) returns xml {
         </tns:GiveNewSchemaNameHere>
     </xsl:template>
 </xsl:stylesheet>`);
-    xml var1 = checkpanic xslt:transform(var0, xml `<?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0"><xsl:param name="post"/><xsl:template name="FICOScore-input" match="/"><tns:GiveNewSchemaNameHere><xsl:if test="$post/item/tns:GiveNewSchemaNameHere/tns:DOB"><tns:DOB><xsl:value-of select="$post/item/tns:GiveNewSchemaNameHere/tns:DOB"/></tns:DOB></xsl:if><xsl:if test="$post/item/tns:GiveNewSchemaNameHere/tns:FirstName"><tns:FirstName><xsl:value-of select="$post/item/tns:GiveNewSchemaNameHere/tns:FirstName"/></tns:FirstName></xsl:if><xsl:if test="$post/item/tns:GiveNewSchemaNameHere/tns:LastName"><tns:LastName><xsl:value-of select="$post/item/tns:GiveNewSchemaNameHere/tns:LastName"/></tns:LastName></xsl:if><xsl:if test="$post/item/tns:GiveNewSchemaNameHere/tns:SSN"><tns:SSN><xsl:value-of select="$post/item/tns:GiveNewSchemaNameHere/tns:SSN"/></tns:SSN></xsl:if></tns:GiveNewSchemaNameHere></xsl:template></xsl:stylesheet>`);
-    PROC_creditapp.module.EquifaxScore(var1);
+    creditapp_module_EquifaxScore_start(var0);
 }
 
-function annonFunction1(xml input) returns xml {
+function ext_activity_3(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
     xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns3="http://xmlns.example.com/Creditscore/parameters" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
@@ -165,21 +165,10 @@ function annonFunction1(xml input) returns xml {
         </tns:GiveNewSchemaNameHere>
     </xsl:template>
 </xsl:stylesheet>`);
-    xml var1 = checkpanic xslt:transform(var0, xml `<?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns3="http://xmlns.example.com/Creditscore/parameters" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0"><xsl:param name="post"/><xsl:template name="ExperianScore-input" match="/"><tns:GiveNewSchemaNameHere><xsl:if test="$post/item/tns:GiveNewSchemaNameHere/tns:DOB"><tns:DOB><xsl:value-of select="$post/item/tns:GiveNewSchemaNameHere/tns:DOB"/></tns:DOB></xsl:if><xsl:if test="$post/item/tns:GiveNewSchemaNameHere/tns:FirstName"><tns:FirstName><xsl:value-of select="$post/item/tns:GiveNewSchemaNameHere/tns:FirstName"/></tns:FirstName></xsl:if><xsl:if test="$post/item/tns:GiveNewSchemaNameHere/tns:LastName"><tns:LastName><xsl:value-of select="$post/item/tns:GiveNewSchemaNameHere/tns:LastName"/></tns:LastName></xsl:if><xsl:if test="$post/item/tns:GiveNewSchemaNameHere/tns:SSN"><tns:SSN><xsl:value-of select="$post/item/tns:GiveNewSchemaNameHere/tns:SSN"/></tns:SSN></xsl:if></tns:GiveNewSchemaNameHere></xsl:template></xsl:stylesheet>`);
-    PROC_creditapp.module.ExperianScore(var1);
+    creditapp_module_ExperianScore_start(var0);
 }
 
-function FICOScoreTopostOut(xml input) {
-    annonFunction0(input);
-}
-
-function ExperianScoreTopostOut(xml input) {
-    annonFunction1(input);
-}
-
-function scope1(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|http:NotFound|http:InternalServerError { //OnMessageStart
-    //OnMessageEnd
+function reply_4(xml input) returns xml {
     xml inputXML = input is xml ? input : toXML(input);
     xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns1="http://xmlns.example.com/20180827160122PLT" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" xmlns:tns2="http://tns.tibco.com/bw/json/1535671685533" version="2.0">
@@ -226,9 +215,10 @@ function scope1(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema|ht
 </xsl:stylesheet>`);
     xml var1 = checkpanic xslt:transform(var0, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns1="http://xmlns.example.com/20180827160122PLT" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" xmlns:tns2="http://tns.tibco.com/bw/json/1535671685533" version="2.0"><xsl:param name="EquifaxScore"/><xsl:param name="ExperianScore"/><xsl:template name="postOut-input" match="/"><tns1:postResponse><item><tns:CreditScoreSuccessSchema><tns:EquifaxResponse><xsl:if test="$EquifaxScore/tns:FICOScore"><tns:FICOScore><xsl:value-of select="$EquifaxScore/tns:FICOScore"/></tns:FICOScore></xsl:if><xsl:if test="$EquifaxScore/tns:NoOfInquiries"><tns:NoOfInquiries><xsl:value-of select="$EquifaxScore/tns:NoOfInquiries"/></tns:NoOfInquiries></xsl:if><xsl:if test="$EquifaxScore/tns:Rating"><tns:Rating><xsl:value-of select="$EquifaxScore/tns:Rating"/></tns:Rating></xsl:if></tns:EquifaxResponse><tns:ExperianResponse><xsl:if test="$ExperianScore/tns2:fiCOScore"><tns:FICOScore><xsl:value-of select="$ExperianScore/tns2:fiCOScore"/></tns:FICOScore></xsl:if><xsl:if test="$ExperianScore/tns2:noOfInquiries"><tns:NoOfInquiries><xsl:value-of select="$ExperianScore/tns2:noOfInquiries"/></tns:NoOfInquiries></xsl:if><xsl:if test="$ExperianScore/tns2:rating"><tns:Rating><xsl:value-of select="$ExperianScore/tns2:rating"/></tns:Rating></xsl:if></tns:ExperianResponse></tns:CreditScoreSuccessSchema></item></tns1:postResponse></xsl:template></xsl:stylesheet>`);
-    FICOScoreTopostOut(var1);
-    ExperianScoreTopostOut(var1);
+    return var1;
 }
 
-function flow() {
+function pick_5(xml input) returns xml {
+    xml inputXML = input is xml ? input : toXML(input);
+    return inputXML;
 }

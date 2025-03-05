@@ -48,8 +48,7 @@ public class TibcoToBalConverter {
         }
         TibcoModel.Process process = XmlToTibcoModelConverter.parseProcess(root);
         BallerinaModel.Module ballerinaModule =
-                TibcoToBallerinaModelConverter.convertProcess(new ProcessContext(),
-                        process);
+                TibcoToBallerinaModelConverter.convertProcess(process);
         BallerinaModel ballerinaModel = new BallerinaModel(new BallerinaModel.DefaultPackage("tibco", "sample", "0.1"),
                 List.of(ballerinaModule));
         return new CodeGenerator(ballerinaModel).generateBalCode();

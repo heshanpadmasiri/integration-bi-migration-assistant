@@ -58,7 +58,7 @@ public class TibcoModel {
 
         record WSDLDefinition(Map<String, String> namespaces, PartnerLinkType partnerLinkType,
                               Collection<NameSpace> imports, Collection<Message> messages,
-                              Collection<PortType> portTypes) implements Type {
+                              PortType portType) implements Type {
 
             public record PartnerLinkType(String name, Role role) {
 

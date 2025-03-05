@@ -21,6 +21,7 @@ package converter.tibco.analyzer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -98,6 +99,7 @@ public class ModelAnalyser {
 
     private static class ProcessAnalysisContext {
 
+        Collection<TibcoModel.Scope.Flow.Link> links = new HashSet<>();
         private TibcoModel.Scope.Flow.Activity startActivity;
         private TibcoModel.Scope.Flow.Activity endActivity;
         private final Map<TibcoModel.Scope.Flow.Link, String> workerNames = new HashMap<>();

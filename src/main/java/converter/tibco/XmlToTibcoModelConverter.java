@@ -627,7 +627,8 @@ public final class XmlToTibcoModelConverter {
             }
         }
         assert partnerLinkType != null;
-        return new TibcoModel.Type.WSDLDefinition(namespaces, partnerLinkType, imports, messages, portTypes);
+        assert portTypes.size() == 1;
+        return new TibcoModel.Type.WSDLDefinition(namespaces, partnerLinkType, imports, messages, portTypes.getFirst());
     }
 
     private static TibcoModel.Type.WSDLDefinition.PortType parsePortType(Element element) {

@@ -100,6 +100,10 @@ public final class AnalysisResult {
         return data;
     }
 
+    public Collection<TibcoModel.Scope.Flow.Activity> activities() {
+        return activityData.keySet();
+    }
+
     public record LinkData(String workerName, Collection<TibcoModel.Scope.Flow.Activity> sourceActivities,
                            Collection<TibcoModel.Scope.Flow.Activity> destinationActivities) {
 

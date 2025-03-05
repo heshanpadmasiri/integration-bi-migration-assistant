@@ -39,8 +39,7 @@ public class ConversionTest {
         try {
             var element = TibcoToBalConverter.parseXmlFile(path.toString());
             var process = XmlToTibcoModelConverter.parseProcess(element);
-            var cx = new ProcessContext();
-            var module = TibcoToBallerinaModelConverter.convertProcess(cx, process);
+            var module = TibcoToBallerinaModelConverter.convertProcess(process);
             // TODO: figure out how to validate the module
             if (kind == TestUtils.TestKind.ERROR) {
                 throw new AssertionError("Parsing succeeded for an invalid input: " + path);

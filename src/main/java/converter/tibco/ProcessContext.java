@@ -25,9 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import ballerina.BallerinaModel;
+import converter.tibco.analyzer.AnalysisResult;
+import converter.tibco.analyzer.ModelAnalyser;
+import tibco.TibcoModel;
 
 class ProcessContext {
 
@@ -35,10 +37,18 @@ class ProcessContext {
     private final Set<BallerinaModel.Import> imports = new HashSet<>();
     private final List<BallerinaModel.Listener> listeners = new ArrayList<>();
     private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
-    private final Map<String, TibcoToBallerinaModelConverter.PortHandler> portHandlers = new HashMap<>();
     private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
     private int annonFunctionCounter = 0;
+    public int acitivityCounter = 0;
     private String toXMLFunction = null;
+    public final TibcoModel.Process process;
+
+    public final AnalysisResult analysisResult;
+
+    ProcessContext(TibcoModel.Process process) {
+        this.process = process;
+        this.analysisResult = ModelAnalyser.analyseProcess(process);
+    }
 
     String getAnnonFunctionName() {
         return "annonFunction" + annonFunctionCounter++;
@@ -93,25 +103,6 @@ class ProcessContext {
         return new BallerinaModel.TypeDesc.TypeReference(name);
     }
 
-    String addPortHandler(String portName, String basePath, String apiPath,
-                          BallerinaModel.TypeDesc inputType,
-                          BallerinaModel.TypeDesc returnType) {
-        String name = ConversionUtils.sanitizes(basePath + apiPath) + "Handler";
-        this.portHandlers.put(portName,
-                new TibcoToBallerinaModelConverter.PortHandler(name, inputType, returnType));
-        return name;
-    }
-
-    ActivityContext registerWithPortHandler(String portname, String listener) {
-        TibcoToBallerinaModelConverter.PortHandler portHandler = portHandlers.get(portname);
-        if (portHandler == null) {
-            throw new IllegalArgumentException("Port handler not found: " + portname);
-        }
-        portHandler.registerListener(listener);
-        BallerinaModel.Parameter input = new BallerinaModel.Parameter(portHandler.inputType().toString(), "input");
-        return new ActivityContext(this, listener, List.of(input), portHandler.returnType().toString());
-    }
-
     String declareConstant(String name, String valueRepr, String type) {
         name = ConversionUtils.sanitizes(name);
         BallerinaModel.TypeDesc td = getTypeByName(type);
@@ -150,31 +141,8 @@ class ProcessContext {
         imports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
     }
 
-    BallerinaModel.TextDocument finish(BallerinaModel.TextDocument textDocument) {
-        for (Map.Entry<String, Optional<BallerinaModel.ModuleTypeDef>> entry : moduleTypeDefs.entrySet()) {
-            if (entry.getValue().isEmpty()) {
-                throw new IllegalStateException("Type not found: " + entry.getKey());
-            }
-        }
-        List<BallerinaModel.Import> combinedImports =
-                Stream.concat(imports.stream(), textDocument.imports().stream()).toList();
-        List<BallerinaModel.Listener> combinedListeners =
-                Stream.concat(listeners.stream(), textDocument.listeners().stream()).toList();
-        List<BallerinaModel.ModuleVar> combinedModuleVars =
-                Stream.concat(constants.values().stream(), textDocument.moduleVars().stream()).toList();
-        List<BallerinaModel.Function> combinedFunctions =
-                Stream.concat(utilityFunctions.stream(),
-                                Stream.concat(
-                                        portHandlers.values().stream()
-                                                .map(TibcoToBallerinaModelConverter.PortHandler::toFunction),
-                                        textDocument.functions().stream()))
-                        .toList();
-        return new BallerinaModel.TextDocument(textDocument.documentName(), combinedImports,
-                textDocument.moduleTypeDefs(), combinedModuleVars, combinedListeners,
-                textDocument.services(), combinedFunctions, textDocument.Comments());
-    }
-
     String getDefaultHttpListenerRef() {
+        // FIXME: this needs to increment ports so push the port to conversion context
         if (listeners.isEmpty()) {
             addLibraryImport(Library.HTTP);
             String listenerRef = "LISTENER";
@@ -186,5 +154,18 @@ class ProcessContext {
             return listeners.getFirst().name();
         }
 
+    }
+
+    BallerinaModel.TextDocument serialize(List<BallerinaModel.ModuleTypeDef> typeDefs,
+                                          BallerinaModel.Service processService,
+                                          List<BallerinaModel.Function> functions) {
+        String name = ConversionUtils.sanitizes(process.name()) + ".bal";
+        return new BallerinaModel.TextDocument(name, imports.stream().toList(), typeDefs,
+                constants.values().stream().toList(), listeners.stream().toList(), List.of(processService), functions,
+                List.of());
+    }
+
+    public String getProcessStartFunctionName() {
+        return ConversionUtils.sanitizes(process.name()) + "_start";
     }
 }
