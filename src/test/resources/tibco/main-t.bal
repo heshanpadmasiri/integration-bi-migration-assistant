@@ -95,7 +95,7 @@ service /CreditDetails on LISTENER {
 public function creditapp_module_MainProcess_start(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema {
     xml inputXML = toXML(input);
     xml xmlResult = process_creditapp_module_MainProcess(inputXML);
-    CreditScoreSuccessSchema result = typeConversion_0(xmlResult);
+    CreditScoreSuccessSchema result = convertToCreditScoreSuccessSchema(xmlResult);
     return result;
 }
 
@@ -248,4 +248,8 @@ function reply(xml input) returns xml {
 
 function toXML(map<anydata> data) returns xml {
     return checkpanic xmldata:toXml(data);
+}
+
+function convertToCreditScoreSuccessSchema(xml input) returns CreditScoreSuccessSchema {
+    return checkpanic xmldata:parseAsType(input);
 }

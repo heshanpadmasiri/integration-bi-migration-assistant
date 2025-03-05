@@ -177,7 +177,21 @@ class ProcessContext {
 
     public String getConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
         // FIXME: create a utility function
-        return typeConversionFunction.computeIfAbsent(targetType,
-                ignored -> "typeConversion_" + typeConversionFunction.size());
+        return typeConversionFunction.computeIfAbsent(targetType, this::createConvertToTypeFunction);
+    }
+
+    private String createConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
+        String functionName = "convertTo" + ConversionUtils.sanitizes(targetType.toString());
+        addLibraryImport(Library.XML_DATA);
+        BallerinaModel.Expression.FunctionCall parseAsTypeCall =
+                new BallerinaModel.Expression.FunctionCall("xmldata:parseAsType", new String[]{"input"});
+        BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(parseAsTypeCall);
+        BallerinaModel.Return<BallerinaModel.Expression.CheckPanic> returnStmt =
+                new BallerinaModel.Return<>(Optional.of(checkPanic));
+        BallerinaModel.Function function = new BallerinaModel.Function(Optional.empty(), functionName,
+                List.of(new BallerinaModel.Parameter("xml", "input")), Optional.of(targetType.toString()),
+                List.of(returnStmt));
+        utilityFunctions.add(function);
+        return functionName;
     }
 }
