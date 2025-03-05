@@ -39,7 +39,7 @@ public class ConversionTest {
         try {
             var element = TibcoToBalConverter.parseXmlFile(path.toString());
             var process = XmlToTibcoModelConverter.parseProcess(element);
-            var cx = new TibcoToBallerinaModelConverter.Context();
+            var cx = new ProcessContext();
             var module = TibcoToBallerinaModelConverter.convertProcess(cx, process);
             // TODO: figure out how to validate the module
             if (kind == TestUtils.TestKind.ERROR) {
