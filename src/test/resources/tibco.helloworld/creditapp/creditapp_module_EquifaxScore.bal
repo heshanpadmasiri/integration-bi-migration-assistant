@@ -21,7 +21,9 @@ function creditapp_module_EquifaxScore_start(GiveNewSchemaNameHere input) return
 }
 
 function invoke(xml input) returns xml {
-    return input;
+    http:Client var0 = checkpanic new ("/");
+    json var1 = checkpanic var0->post("/creditscore", input);
+    return fromJson(var1);
 }
 
 function process_creditapp_module_EquifaxScore(xml input) returns xml {

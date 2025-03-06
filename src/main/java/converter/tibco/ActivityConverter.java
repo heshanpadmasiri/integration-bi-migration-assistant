@@ -23,9 +23,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
+import converter.tibco.analyzer.AnalysisResult;
 import tibco.TibcoModel;
 
 class ActivityConverter {
@@ -97,7 +99,46 @@ class ActivityConverter {
     private static List<BallerinaModel.Statement> convertInvoke(ActivityContext cx,
                                                                 TibcoModel.Scope.Flow.Activity.Invoke invoke) {
         // FIXME:
-        return List.of(new BallerinaModel.Return<>(cx.getInputAsXml()));
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        AnalysisResult ar = cx.processContext.analysisResult;
+        TibcoModel.PartnerLink.Binding binding = ar.getBinding(invoke.partnerLink());
+        BallerinaModel.VarDeclStatment clientDecl = createClientForBinding(cx, binding);
+        body.add(clientDecl);
+        // TODO: may be this needs to be json
+        BallerinaModel.VarDeclStatment bindingCallResult =
+                createBindingCall(cx, binding, new BallerinaModel.Expression.VariableReference(clientDecl.varName()),
+                        cx.getInputAsXml());
+        body.add(bindingCallResult);
+        String jsonToXMLFunction = cx.processContext.getJsonToXMLFunction();
+        BallerinaModel.Expression.FunctionCall jsonToXMLFunctionCall =
+                new BallerinaModel.Expression.FunctionCall(jsonToXMLFunction,
+                        new String[]{bindingCallResult.varName()});
+        body.add(new BallerinaModel.Return<>(jsonToXMLFunctionCall));
+        return body;
+    }
+
+    private static BallerinaModel.VarDeclStatment createBindingCall(ActivityContext cx,
+                                                                    TibcoModel.PartnerLink.Binding binding,
+                                                                    BallerinaModel.Expression.VariableReference client,
+                                                                    BallerinaModel.Expression.VariableReference value) {
+        String path = binding.path().path();
+        assert binding.operation().method() == TibcoModel.PartnerLink.Binding.Operation.Method.POST;
+        BallerinaModel.Action.RemoteMethodCallAction call =
+                new BallerinaModel.Action.RemoteMethodCallAction(client, "post", List.of(
+                        new BallerinaModel.Expression.StringConstant(path), value));
+        BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(call);
+        return new BallerinaModel.VarDeclStatment(JSON, cx.getAnnonVarName(), checkPanic);
+    }
+
+    private static BallerinaModel.VarDeclStatment createClientForBinding(ActivityContext cx,
+                                                                         TibcoModel.PartnerLink.Binding binding) {
+        String basePath = binding.path().basePath();
+        BallerinaModel.Expression.NewExpression newExpression =
+                new BallerinaModel.Expression.NewExpression(
+                        List.of(new BallerinaModel.Expression.StringConstant(basePath)));
+        BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(newExpression);
+        return new BallerinaModel.VarDeclStatment(cx.processContext.getTypeByName("http:Client"), cx.getAnnonVarName(),
+                checkPanic);
     }
 
     private static List<BallerinaModel.Statement> convertExtActivity(ActivityContext fx,

@@ -96,6 +96,7 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
         enum BuiltinType implements TypeDesc {
             ANYDATA("anydata"),
+            JSON("json"),
             NIL("()"),
             STRING("string"),
             INT("int"),
@@ -193,6 +194,32 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public sealed interface Expression {
 
+        record StringConstant(String value) implements Expression {
+
+            @Override
+            public String toString() {
+                return "\"" + value + "\"";
+            }
+        }
+
+        record NewExpression(Optional<String> classDescriptor, List<Expression> args) implements Expression {
+
+            public NewExpression(List<Expression> args) {
+                this(Optional.empty(), args);
+            }
+
+            @Override
+            public String toString() {
+                StringBuilder sb = new StringBuilder();
+                sb.append("new ");
+                classDescriptor.ifPresent(s -> sb.append(s).append(" "));
+                sb.append("(");
+                sb.append(String.join(", ", args.stream().map(Objects::toString).toList()));
+                sb.append(")");
+                return sb.toString();
+            }
+        }
+
         record FunctionCall(String functionName, String[] args) implements Expression {
 
             public FunctionCall(String functionName, Expression[] args) {
@@ -214,7 +241,7 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             }
         }
 
-        record CheckPanic(FunctionCall callExpr) implements Expression {
+        record CheckPanic(Expression callExpr) implements Expression {
 
             @Override
             public String toString() {
@@ -291,6 +318,17 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             @Override
             public String toString() {
                 return "<- " + peer;
+            }
+        }
+
+        record RemoteMethodCallAction(Expression expression, String methodName, List<Expression> args)
+                implements Action {
+
+            @Override
+            public String toString() {
+                return expression + "->" + methodName + "(" +
+                        String.join(", ", args.stream().map(Objects::toString).toList()) +
+                        ")";
             }
         }
     }

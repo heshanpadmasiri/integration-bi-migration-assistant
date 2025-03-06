@@ -46,14 +46,21 @@ public class ModelAnalyser {
         Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> endActivities =
                 Map.of(process, cx.endActivities);
         Map<TibcoModel.Scope.Flow.Activity, AnalysisResult.ActivityData> activityData = cx.activityData();
-
         Map<TibcoModel.Scope.Flow.Link, String> workerNames = cx.workerNames();
+        Map<String, TibcoModel.PartnerLink.Binding> partnerLinkBindings =
+                Collections.unmodifiableMap(cx.partnerLinkBindings);
         return new AnalysisResult(cx.destinationMap, cx.sourceMap, startActivities, endActivities, workerNames,
-                activityData);
+                activityData, partnerLinkBindings);
     }
 
     private static void analyseProcess(ProcessAnalysisContext cx, TibcoModel.Process process) {
         analyseScope(cx, process.scope());
+        analysePartnerLinks(cx, process.partnerLinks());
+    }
+
+    private static void analysePartnerLinks(ProcessAnalysisContext cx, Collection<TibcoModel.PartnerLink> links) {
+        links.stream().filter(link -> link.binding().isPresent())
+                .forEach(link -> cx.partnerLinkBindings.put(link.name(), link.binding().get()));
     }
 
     private static void analyseScope(ProcessAnalysisContext cx, TibcoModel.Scope scope) {
@@ -122,6 +129,8 @@ public class ModelAnalyser {
 
         private final Map<TibcoModel.Scope.Flow.Link, String> linkWorkerNames = new HashMap<>();
         private final Map<TibcoModel.Scope.Flow.Activity, String> activityWorkerNames = new HashMap<>();
+        private final Map<String, TibcoModel.PartnerLink.Binding> partnerLinkBindings = new HashMap<>();
+
         private static final Map<TibcoModel.Scope.Flow.Activity, String> activityFunctionNames =
                 new ConcurrentHashMap<>();
 

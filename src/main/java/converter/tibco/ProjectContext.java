@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
@@ -43,6 +44,7 @@ public class ProjectContext {
     private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
     private final Set<BallerinaModel.Import> utilityFunctionImports = new HashSet<>();
     private String toXMLFunction = null;
+    private String jsonToXMLFunction = null;
     private int nextPort = 8080;
 
     ProcessContext getProcessContext(TibcoModel.Process process) {
@@ -73,6 +75,21 @@ public class ProjectContext {
             toXMLFunction = functionName;
         }
         return toXMLFunction;
+    }
+
+    private String getJsonToXMLFunction() {
+        if (jsonToXMLFunction == null) {
+            Library library = Library.XML_DATA;
+            utilityFunctionImports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
+            String functionName = "fromJson";
+            utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
+                    List.of(new BallerinaModel.Parameter(JSON, "data")),
+                    Optional.of("xml"), List.of(new BallerinaModel.Return<>(
+                    Optional.of(new BallerinaModel.Expression.CheckPanic(
+                            new BallerinaModel.Expression.FunctionCall("xmldata:fromJson", new String[]{"data"})))))));
+            jsonToXMLFunction = functionName;
+        }
+        return jsonToXMLFunction;
     }
 
     private String createConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
@@ -150,6 +167,7 @@ public class ProjectContext {
         return switch (name) {
             case "client4XXError" -> Optional.of(getLibraryType(Library.HTTP, "NotFound", processContext));
             case "server5XXError" -> Optional.of(getLibraryType(Library.HTTP, "InternalServerError", processContext));
+            case "Client" -> Optional.of(getLibraryType(Library.HTTP, "Client", processContext));
             default -> Optional.empty();
         };
     }
@@ -266,6 +284,10 @@ public class ProjectContext {
 
         public FunctionData getProcessStartFunction(String processName) {
             return projectContext.getProcessStartFunction(processName);
+        }
+
+        public String getJsonToXMLFunction() {
+            return projectContext.getJsonToXMLFunction();
         }
     }
 

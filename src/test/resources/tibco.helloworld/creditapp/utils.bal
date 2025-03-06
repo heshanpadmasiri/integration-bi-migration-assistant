@@ -12,6 +12,10 @@ function convertToCreditScoreSuccessSchema(xml input) returns CreditScoreSuccess
     return checkpanic xmldata:parseAsType(input);
 }
 
+function fromJson(json data) returns xml {
+    return checkpanic xmldata:fromJson(data);
+}
+
 function convertToSuccessSchema(xml input) returns SuccessSchema {
     return checkpanic xmldata:parseAsType(input);
 }

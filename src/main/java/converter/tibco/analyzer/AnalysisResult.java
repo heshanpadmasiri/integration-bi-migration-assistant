@@ -21,6 +21,7 @@ package converter.tibco.analyzer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import ballerina.BallerinaModel;
 import tibco.TibcoModel;
@@ -33,19 +34,22 @@ public final class AnalysisResult {
     private final Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> endActivities;
     private final Map<TibcoModel.Scope.Flow.Link, String> workerNames;
     private final Map<TibcoModel.Scope.Flow.Activity, ActivityData> activityData;
+    private final Map<String, TibcoModel.PartnerLink.Binding> partnerlinkBindings;
 
     AnalysisResult(Map<TibcoModel.Scope.Flow.Link, Collection<TibcoModel.Scope.Flow.Activity>> destinationMap,
                    Map<TibcoModel.Scope.Flow.Link, Collection<TibcoModel.Scope.Flow.Activity>> sourceMap,
                    Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> startActivities,
                    Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> endActivities,
                    Map<TibcoModel.Scope.Flow.Link, String> workerNames,
-                   Map<TibcoModel.Scope.Flow.Activity, ActivityData> activityData) {
+                   Map<TibcoModel.Scope.Flow.Activity, ActivityData> activityData,
+                   Map<String, TibcoModel.PartnerLink.Binding> partnerlinkBindings) {
         this.destinationMap = destinationMap;
         this.sourceMap = sourceMap;
         this.startActivities = startActivities;
         this.endActivities = endActivities;
         this.workerNames = workerNames;
         this.activityData = activityData;
+        this.partnerlinkBindings = partnerlinkBindings;
     }
 
     public Collection<TibcoModel.Scope.Flow.Activity> startActivities(TibcoModel.Process process) {
@@ -113,6 +117,10 @@ public final class AnalysisResult {
                     .toList();
         }
         return List.of();
+    }
+
+    public TibcoModel.PartnerLink.Binding getBinding(String partnerLinkName) {
+        return Objects.requireNonNull(partnerlinkBindings.get(partnerLinkName));
     }
 
     public record LinkData(String workerName, Collection<TibcoModel.Scope.Flow.Activity> sourceActivities,

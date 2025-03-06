@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
@@ -97,36 +98,6 @@ public class TibcoToBallerinaModelConverter {
     private record TypeConversionResult(List<BallerinaModel.ModuleTypeDef> moduleTypeDefs,
                                         BallerinaModel.Service service) {
 
-    }
-
-    private static BallerinaModel.Function generateProcessFunction(ProjectContext.ProcessContext cx,
-                                                                   TibcoModel.Process process) {
-        String name = cx.getProcessFunction();
-        AnalysisResult analysisResult = cx.analysisResult;
-        Collection<TibcoModel.Scope.Flow.Activity> startActivity = cx.analysisResult.startActivities(process);
-        List<BallerinaModel.Statement> body = new ArrayList<>();
-        body.add(generateWorkerForStartActions(cx, startActivity));
-        analysisResult.links().stream().sorted(Comparator.comparing(link -> analysisResult.from(link).workerName()))
-                .map(link -> generateLink(cx, link)).forEach(body::add);
-        analysisResult.activities().stream()
-                .sorted(Comparator.comparing(activity -> analysisResult.from(activity).workerName()))
-                .map(activity -> generateActivityWorkers(cx, activity))
-                .filter(Optional::isPresent).map(Optional::get).forEach(body::add);
-        String resultVariableName =
-                addTerminalWorkerResultCombinationStatements(cx, body, analysisResult.endActivities(process));
-        // Shouldn't this always be one?
-//        List<String> resultVars = new ArrayList<>();
-//        int resultCount = 0;
-//        for (String worker : cx.terminateWorkers) {
-//            String resultName = "result" + resultCount++;
-//            resultVars.add(resultName);
-//            BallerinaModel.VarDeclStatment inputVarDecl = receiveVarFromPeer(worker, resultName);
-//            body.add(inputVarDecl);
-//        }
-//        String resultVar = String.join(" + ", resultVars);
-        body.add(new BallerinaModel.Return<>(new BallerinaModel.Expression.VariableReference(resultVariableName)));
-        return new BallerinaModel.Function(Optional.empty(), name,
-                List.of(new BallerinaModel.Parameter(XML, "input")), Optional.of(XML.toString()), body);
     }
 
     private static String addTerminalWorkerResultCombinationStatements(
@@ -324,5 +295,124 @@ public class TibcoToBallerinaModelConverter {
                 List.of(new BallerinaModel.Parameter(inputType, inputVariable)),
                 Optional.of(returnType.toString()),
                 body);
+    }
+
+    static BallerinaModel.ModuleTypeDef convertComplexType(ProjectContext.ProcessContext cx,
+                                                           TibcoModel.Type.Schema.ComplexType complexType) {
+        BallerinaModel.TypeDesc typeDesc = switch (complexType.body()) {
+            case TibcoModel.Type.Schema.ComplexType.Choice choice -> convertTypeChoice(cx, choice);
+            case TibcoModel.Type.Schema.ComplexType.SequenceBody sequenceBody -> convertSequenceBody(cx, sequenceBody);
+            case TibcoModel.Type.Schema.ComplexType.ComplexContent complexContent ->
+                    convertTypeInclusion(cx, complexContent);
+        };
+        String name = complexType.name();
+        BallerinaModel.ModuleTypeDef typeDef = new BallerinaModel.ModuleTypeDef(name, typeDesc);
+        cx.addModuleTypeDef(name, typeDef);
+        return typeDef;
+    }
+
+    private static BallerinaModel.TypeDesc.RecordTypeDesc convertTypeInclusion(ProjectContext.ProcessContext cx,
+                                                                               TibcoModel.Type.Schema.ComplexType.ComplexContent complexContent) {
+        List<BallerinaModel.TypeDesc> inclusions = List.of(cx.getTypeByName(complexContent.extension().base().name()));
+        RecordBody body = getRecordBody(cx, complexContent.extension().elements());
+        return new BallerinaModel.TypeDesc.RecordTypeDesc(inclusions, body.fields(), body.rest());
+    }
+
+    private static BallerinaModel.TypeDesc.RecordTypeDesc convertSequenceBody(ProjectContext.ProcessContext cx,
+                                                                              TibcoModel.Type.Schema.ComplexType.SequenceBody sequenceBody) {
+        Collection<TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members = sequenceBody.elements();
+        RecordBody body = getRecordBody(cx, members);
+        return new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), body.fields(), body.rest());
+    }
+
+    private static RecordBody getRecordBody(ProjectContext.ProcessContext cx,
+                                            Collection<? extends TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members) {
+        List<BallerinaModel.TypeDesc.RecordTypeDesc.RecordField> fields = new ArrayList<>();
+        Optional<BallerinaModel.TypeDesc> rest = Optional.empty();
+        for (TibcoModel.Type.Schema.ComplexType.SequenceBody.Member member : members) {
+            switch (member) {
+                case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Element element -> {
+                    BallerinaModel.TypeDesc typeDesc = cx.getTypeByName(element.type().name());
+                    fields.add(new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField(element.name(), typeDesc));
+                }
+                case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest ignored -> {
+                    // FIXME: handle this properly
+                    rest = Optional.of(PredefinedTypes.ANYDATA);
+                }
+                case TibcoModel.Type.Schema.ComplexType.Choice choice -> {
+                    rest = Optional.of(convertTypeChoice(cx, choice));
+                }
+            }
+        }
+        return new RecordBody(fields, rest);
+    }
+
+    private record RecordBody(List<BallerinaModel.TypeDesc.RecordTypeDesc.RecordField> fields,
+                              Optional<BallerinaModel.TypeDesc> rest) {
+
+    }
+
+    static BallerinaModel.TypeDesc.UnionTypeDesc convertTypeChoice(ProjectContext.ProcessContext cx,
+                                                                   TibcoModel.Type.Schema.ComplexType.Choice choice) {
+        List<? extends BallerinaModel.TypeDesc> types = choice.elements().stream().map(element -> {
+            BallerinaModel.TypeDesc typeDesc = cx.getTypeByName(element.ref().name());
+            assert element.maxOccurs() == 1;
+            if (element.minOccurs() == 0) {
+                return BallerinaModel.TypeDesc.UnionTypeDesc.of(typeDesc, BallerinaModel.TypeDesc.BuiltinType.NIL);
+            } else {
+                return typeDesc;
+            }
+        }).flatMap(type -> {
+            if (type instanceof BallerinaModel.TypeDesc.UnionTypeDesc(
+                    Collection<? extends BallerinaModel.TypeDesc> members
+            )) {
+                return members.stream();
+            } else {
+                return Stream.of(type);
+            }
+        }).distinct().toList();
+        return new BallerinaModel.TypeDesc.UnionTypeDesc(types);
+    }
+
+    private static BallerinaModel.Function generateProcessFunction(ProjectContext.ProcessContext cx,
+                                                                   TibcoModel.Process process) {
+        String name = cx.getProcessFunction();
+        AnalysisResult analysisResult = cx.analysisResult;
+        Collection<TibcoModel.Scope.Flow.Activity> startActivity = cx.analysisResult.startActivities(process);
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        body.add(generateWorkerForStartActions(cx, startActivity));
+        analysisResult.links().stream().sorted(Comparator.comparing(link -> analysisResult.from(link).workerName()))
+                .map(link -> generateLink(cx, link)).forEach(body::add);
+        analysisResult.activities().stream()
+                .sorted(Comparator.comparing(activity -> analysisResult.from(activity).workerName()))
+                .map(activity -> generateActivityWorkers(cx, activity))
+                .filter(Optional::isPresent).map(Optional::get).forEach(body::add);
+        String resultVariableName =
+                addTerminalWorkerResultCombinationStatements(cx, body, analysisResult.endActivities(process));
+        body.add(new BallerinaModel.Return<>(new BallerinaModel.Expression.VariableReference(resultVariableName)));
+        return new BallerinaModel.Function(Optional.empty(), name,
+                List.of(new BallerinaModel.Parameter(XML, "input")), Optional.of(XML.toString()), body);
+    }
+
+    static class PredefinedTypes {
+
+        private static final BallerinaModel.TypeDesc.BuiltinType ANYDATA = BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
+    }
+
+    record LinkHandler(String name, BallerinaModel.TypeDesc inputType, Collection<String> registeredListeners) {
+
+        public void registerListener(String listener) {
+            registeredListeners.add(listener);
+        }
+
+        public BallerinaModel.Function toFunction() {
+            List<BallerinaModel.Statement> body = registeredListeners.stream()
+                    .map(listener -> new BallerinaModel.Expression.FunctionCall(listener, new String[]{"input"}))
+                    .map(BallerinaModel.CallStatement::new).map(each -> (BallerinaModel.Statement) each).toList();
+
+            return new BallerinaModel.Function(Optional.empty(), name,
+                    List.of(new BallerinaModel.Parameter("input", inputType.toString(), Optional.empty())),
+                    Optional.empty(), body);
+        }
     }
 }
