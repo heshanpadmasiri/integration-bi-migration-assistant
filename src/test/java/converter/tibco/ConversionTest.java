@@ -68,7 +68,6 @@ public class ConversionTest {
                         .map(ConversionTest::parse).toList();
         BallerinaModel.Module module = TibcoToBallerinaModelConverter.convertProcesses(processes);
         for (BallerinaModel.TextDocument textDocument : module.textDocuments()) {
-            System.out.println(textDocument);
             BallerinaModel.Module tmpModule = new BallerinaModel.Module(module.name(), List.of(textDocument));
             BallerinaModel ballerinaModel =
                     new BallerinaModel(new BallerinaModel.DefaultPackage("tibco", "sample", "0.1"),

@@ -1,4 +1,3 @@
-import ballerina/data.xmldata;
 import ballerina/http;
 
 const string client_404_RecordNotFound = "Record Not Found";
@@ -43,12 +42,4 @@ function process_creditapp_module_EquifaxScore(xml input) returns xml {
 }
 
 function receiveEvent(xml input) returns xml {
-}
-
-function toXML(map<anydata> data) returns xml {
-    return checkpanic xmldata:toXml(data);
-}
-
-function convertToSuccessSchema(xml input) returns SuccessSchema {
-    return checkpanic xmldata:parseAsType(input);
 }

@@ -1,4 +1,3 @@
-import ballerina/data.xmldata;
 import ballerina/http;
 
 listener http:Listener creditapp_module_ExperianScore_listener = new (8082, {host: "localhost"});
@@ -9,16 +8,16 @@ service / on creditapp_module_ExperianScore_listener {
     }
 }
 
-function activityExtension(xml input) returns xml {
+function activityExtension_10(xml input) returns xml {
 }
 
-function activityExtension_2(xml input) returns xml {
+function activityExtension_11(xml input) returns xml {
 }
 
-function activityExtension_3(xml input) returns xml {
+function activityExtension_12(xml input) returns xml {
 }
 
-function activityExtension_4(xml input) returns xml {
+function activityExtension_13(xml input) returns xml {
 }
 
 public function creditapp_module_ExperianScore_start(GiveNewSchemaNameHere input) returns ExperianResponseSchemaElement {
@@ -30,40 +29,32 @@ public function creditapp_module_ExperianScore_start(GiveNewSchemaNameHere input
 
 function process_creditapp_module_ExperianScore(xml input) returns xml {
     worker start_worker {
-        xml output = activityExtension(input);
+        xml output = activityExtension_10(input);
         output -> ParseJSONToEnd;
     }
     worker SendHTTPRequestToEnd {
         xml v0 = <- ParseJSONToEnd;
-        xml output0 = activityExtension_2(v0);
+        xml output0 = activityExtension_11(v0);
         output0 -> RenderJSONToSendHTTPRequest;
     }
     worker RenderJSONToSendHTTPRequest {
         xml v0 = <- SendHTTPRequestToEnd;
-        xml output0 = activityExtension_3(v0);
+        xml output0 = activityExtension_12(v0);
         output0 -> StartToSendHTTPRequest;
     }
     worker ParseJSONToEnd {
         xml v0 = <- start_worker;
-        xml output0 = activityExtension_4(v0);
+        xml output0 = activityExtension_13(v0);
         output0 -> SendHTTPRequestToEnd;
     }
     worker StartToSendHTTPRequest {
         xml v0 = <- RenderJSONToSendHTTPRequest;
-        xml output0 = receiveEvent(v0);
+        xml output0 = receiveEvent_9(v0);
         output0 -> function;
     }
     xml result0 = <- StartToSendHTTPRequest;
     return result0;
 }
 
-function receiveEvent(xml input) returns xml {
-}
-
-function toXML(map<anydata> data) returns xml {
-    return checkpanic xmldata:toXml(data);
-}
-
-function convertToExperianResponseSchemaElement(xml input) returns ExperianResponseSchemaElement {
-    return checkpanic xmldata:parseAsType(input);
+function receiveEvent_9(xml input) returns xml {
 }

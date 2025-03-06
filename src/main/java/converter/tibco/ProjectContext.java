@@ -40,6 +40,9 @@ public class ProjectContext {
 
     private final Map<TibcoModel.Process, ProcessContext> processContextMap = new HashMap<>();
     private final Map<String, Optional<BallerinaModel.ModuleTypeDef>> moduleTypeDefs = new HashMap<>();
+    private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
+    private final Set<BallerinaModel.Import> utilityFunctionImports = new HashSet<>();
+    private String toXMLFunction = null;
     private int nextPort = 8080;
 
     ProcessContext getProcessContext(TibcoModel.Process process) {
@@ -51,9 +54,47 @@ public class ProjectContext {
     }
 
     public BallerinaModel.Module serialize(Collection<BallerinaModel.TextDocument> textDocuments) {
+        // FIXME: also do utils
         List<BallerinaModel.TextDocument> combinedTextDocuments = Stream.concat(textDocuments.stream(),
-                Stream.of(typesFile())).toList();
+                Stream.of(typesFile(), utilsFile())).toList();
         return new BallerinaModel.Module("tibco", combinedTextDocuments);
+    }
+
+    String getToXmlFunction() {
+        if (toXMLFunction == null) {
+            Library library = Library.XML_DATA;
+            utilityFunctionImports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
+            String functionName = "toXML";
+            utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
+                    List.of(new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(ANYDATA), "data")),
+                    Optional.of("xml"), List.of(new BallerinaModel.Return<>(
+                    Optional.of(new BallerinaModel.Expression.CheckPanic(
+                            new BallerinaModel.Expression.FunctionCall("xmldata:toXml", new String[]{"data"})))))));
+            toXMLFunction = functionName;
+        }
+        return toXMLFunction;
+    }
+
+    private String createConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
+        String functionName = "convertTo" + ConversionUtils.sanitizes(targetType.toString());
+        Library library = Library.XML_DATA;
+        utilityFunctionImports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
+        BallerinaModel.Expression.FunctionCall parseAsTypeCall =
+                new BallerinaModel.Expression.FunctionCall("xmldata:parseAsType", new String[]{"input"});
+        BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(parseAsTypeCall);
+        BallerinaModel.Return<BallerinaModel.Expression.CheckPanic> returnStmt =
+                new BallerinaModel.Return<>(Optional.of(checkPanic));
+        BallerinaModel.Function function = new BallerinaModel.Function(Optional.empty(), functionName,
+                List.of(new BallerinaModel.Parameter(XML, "input")), Optional.of(targetType.toString()),
+                List.of(returnStmt));
+        utilityFunctions.add(function);
+        return functionName;
+    }
+
+    private BallerinaModel.TextDocument utilsFile() {
+        List<BallerinaModel.Import> imports = utilityFunctionImports.stream().toList();
+        return new BallerinaModel.TextDocument("utils.bal", imports, List.of(), List.of(), List.of(), List.of(),
+                utilityFunctions, List.of());
     }
 
     private BallerinaModel.TextDocument typesFile() {
@@ -136,12 +177,9 @@ public class ProjectContext {
         private final Set<BallerinaModel.Import> imports = new HashSet<>();
         private BallerinaModel.Listener defaultListner = null;
         private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
-        private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
         private final Map<BallerinaModel.TypeDesc, String> typeConversionFunction = new HashMap<>();
-        public int activityCounter = 0;
         public String startWorkerName;
         public final List<String> terminateWorkers = new ArrayList<>();
-        private String toXMLFunction = null;
         public final TibcoModel.Process process;
         public BallerinaModel.TypeDesc processInputType;
         public BallerinaModel.TypeDesc processReturnType;
@@ -156,17 +194,7 @@ public class ProjectContext {
         }
 
         String getToXmlFunction() {
-            if (toXMLFunction == null) {
-                addLibraryImport(Library.XML_DATA);
-                String functionName = "toXML";
-                utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
-                        List.of(new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(ANYDATA), "data")),
-                        Optional.of("xml"), List.of(new BallerinaModel.Return<>(
-                        Optional.of(new BallerinaModel.Expression.CheckPanic(
-                                new BallerinaModel.Expression.FunctionCall("xmldata:toXml", new String[]{"data"})))))));
-                toXMLFunction = functionName;
-            }
-            return toXMLFunction;
+            return this.projectContext.getToXmlFunction();
         }
 
         boolean addModuleTypeDef(String name, BallerinaModel.ModuleTypeDef moduleTypeDef) {
@@ -210,16 +238,13 @@ public class ProjectContext {
         }
 
         // FIXME: don't get the typeDefs
-        BallerinaModel.TextDocument serialize(List<BallerinaModel.ModuleTypeDef> typeDefs,
-                                              BallerinaModel.Service processService,
+        BallerinaModel.TextDocument serialize(BallerinaModel.Service processService,
                                               List<BallerinaModel.Function> functions) {
             String name = ConversionUtils.sanitizes(process.name()) + ".bal";
-            List<BallerinaModel.Function> combinedFunctions =
-                    Stream.concat(functions.stream(), utilityFunctions.stream()).toList();
             List<BallerinaModel.Listener> listeners = defaultListner != null ? List.of(defaultListner) : List.of();
             return new BallerinaModel.TextDocument(name, imports.stream().toList(), List.of(),
                     constants.values().stream().toList(), listeners, List.of(processService),
-                    combinedFunctions, List.of());
+                    functions, List.of());
         }
 
         public String getProcessStartFunctionName() {
@@ -236,18 +261,7 @@ public class ProjectContext {
         }
 
         private String createConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
-            String functionName = "convertTo" + ConversionUtils.sanitizes(targetType.toString());
-            addLibraryImport(Library.XML_DATA);
-            BallerinaModel.Expression.FunctionCall parseAsTypeCall =
-                    new BallerinaModel.Expression.FunctionCall("xmldata:parseAsType", new String[]{"input"});
-            BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(parseAsTypeCall);
-            BallerinaModel.Return<BallerinaModel.Expression.CheckPanic> returnStmt =
-                    new BallerinaModel.Return<>(Optional.of(checkPanic));
-            BallerinaModel.Function function = new BallerinaModel.Function(Optional.empty(), functionName,
-                    List.of(new BallerinaModel.Parameter(XML, "input")), Optional.of(targetType.toString()),
-                    List.of(returnStmt));
-            utilityFunctions.add(function);
-            return functionName;
+            return projectContext.createConvertToTypeFunction(targetType);
         }
 
         public String getProcessStartFunction(String processName) {

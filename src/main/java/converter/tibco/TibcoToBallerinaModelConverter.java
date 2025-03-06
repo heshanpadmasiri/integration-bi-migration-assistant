@@ -74,7 +74,7 @@ public class TibcoToBallerinaModelConverter {
         functions.add(generateProcessFunction(cx, process));
         functions.sort(Comparator.comparing(BallerinaModel.Function::methodName));
 
-        return cx.serialize(result.moduleTypeDefs(), result.service(), functions);
+        return cx.serialize(result.service(), functions);
     }
 
     private static TypeConversionResult convertTypes(ProjectContext.ProcessContext cx, TibcoModel.Process process) {
