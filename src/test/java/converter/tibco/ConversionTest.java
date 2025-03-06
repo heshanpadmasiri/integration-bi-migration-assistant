@@ -75,7 +75,7 @@ public class ConversionTest {
                             List.of(tmpModule));
             SyntaxTree st = new CodeGenerator(ballerinaModel).generateBalCode();
             String actual = st.toSourceCode();
-            String expected = Files.readString(Path.of(resourceDir + textDocument.documentName()));
+            String expected = Files.readString(Path.of(resourceDir + "creditapp/" + textDocument.documentName()));
             Assert.assertEquals(actual, expected);
         }
     }
