@@ -179,7 +179,6 @@ public class ProjectContext {
         private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
         private final Map<BallerinaModel.TypeDesc, String> typeConversionFunction = new HashMap<>();
         public String startWorkerName;
-        public final List<String> terminateWorkers = new ArrayList<>();
         public final TibcoModel.Process process;
         public BallerinaModel.TypeDesc processInputType;
         public BallerinaModel.TypeDesc processReturnType;

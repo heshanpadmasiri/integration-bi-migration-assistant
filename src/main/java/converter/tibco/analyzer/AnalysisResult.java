@@ -21,8 +21,6 @@ package converter.tibco.analyzer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 import ballerina.BallerinaModel;
 import tibco.TibcoModel;
@@ -31,15 +29,15 @@ public final class AnalysisResult {
 
     private final Map<TibcoModel.Scope.Flow.Link, Collection<TibcoModel.Scope.Flow.Activity>> destinationMap;
     private final Map<TibcoModel.Scope.Flow.Link, Collection<TibcoModel.Scope.Flow.Activity>> sourceMap;
-    private final Map<TibcoModel.Process, TibcoModel.Scope.Flow.Activity> startActivities;
-    private final Map<TibcoModel.Process, TibcoModel.Scope.Flow.Activity> endActivities;
+    private final Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> startActivities;
+    private final Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> endActivities;
     private final Map<TibcoModel.Scope.Flow.Link, String> workerNames;
     private final Map<TibcoModel.Scope.Flow.Activity, ActivityData> activityData;
 
     AnalysisResult(Map<TibcoModel.Scope.Flow.Link, Collection<TibcoModel.Scope.Flow.Activity>> destinationMap,
                    Map<TibcoModel.Scope.Flow.Link, Collection<TibcoModel.Scope.Flow.Activity>> sourceMap,
-                   Map<TibcoModel.Process, TibcoModel.Scope.Flow.Activity> startActivities,
-                   Map<TibcoModel.Process, TibcoModel.Scope.Flow.Activity> endActivities,
+                   Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> startActivities,
+                   Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> endActivities,
                    Map<TibcoModel.Scope.Flow.Link, String> workerNames,
                    Map<TibcoModel.Scope.Flow.Activity, ActivityData> activityData) {
         this.destinationMap = destinationMap;
@@ -50,12 +48,12 @@ public final class AnalysisResult {
         this.activityData = activityData;
     }
 
-    public TibcoModel.Scope.Flow.Activity startActivity(TibcoModel.Process process) {
-        return Objects.requireNonNull(startActivities.get(process));
+    public Collection<TibcoModel.Scope.Flow.Activity> startActivities(TibcoModel.Process process) {
+        return startActivities.get(process);
     }
 
-    public Optional<TibcoModel.Scope.Flow.Activity> endActivity(TibcoModel.Process process) {
-        return Optional.ofNullable(endActivities.get(process));
+    public Collection<TibcoModel.Scope.Flow.Activity> endActivities(TibcoModel.Process process) {
+        return endActivities.get(process);
     }
 
     public Collection<TibcoModel.Scope.Flow.Activity> destinations(TibcoModel.Scope.Flow.Link link) {
@@ -64,16 +62,6 @@ public final class AnalysisResult {
             return List.of();
         }
         return destinations;
-    }
-
-    public Collection<TibcoModel.Scope.Flow.Link> sources(TibcoModel.Scope.Flow.Activity activity) {
-        if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithSources activityWithSources) {
-            return activityWithSources.sources().stream()
-                    .map(TibcoModel.Scope.Flow.Activity.Source::linkName)
-                    .map(TibcoModel.Scope.Flow.Link::new)
-                    .toList();
-        }
-        return List.of();
     }
 
     public Collection<TibcoModel.Scope.Flow.Activity> sources(TibcoModel.Scope.Flow.Link link) {
@@ -108,9 +96,19 @@ public final class AnalysisResult {
         return destinationMap.keySet();
     }
 
-    public Collection<TibcoModel.Scope.Flow.Link> destinations(TibcoModel.Scope.Flow.Activity activity) {
+    public Collection<TibcoModel.Scope.Flow.Link> sources(TibcoModel.Scope.Flow.Activity activity) {
         if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithTargets targets) {
             return targets.targets().stream().map(TibcoModel.Scope.Flow.Activity.Target::linkName)
+                    .map(TibcoModel.Scope.Flow.Link::new)
+                    .toList();
+        }
+        return List.of();
+    }
+
+    public Collection<TibcoModel.Scope.Flow.Link> destinations(TibcoModel.Scope.Flow.Activity activity) {
+        if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithSources activityWithSources) {
+            return activityWithSources.sources().stream()
+                    .map(TibcoModel.Scope.Flow.Activity.Source::linkName)
                     .map(TibcoModel.Scope.Flow.Link::new)
                     .toList();
         }
@@ -122,7 +120,7 @@ public final class AnalysisResult {
 
     }
 
-    public record ActivityData(String functionName, BallerinaModel.TypeDesc argumentType,
+    public record ActivityData(String functionName, String workerName, BallerinaModel.TypeDesc argumentType,
                                BallerinaModel.TypeDesc returnType) {
 
     }

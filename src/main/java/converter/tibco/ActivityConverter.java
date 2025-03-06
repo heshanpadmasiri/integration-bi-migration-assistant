@@ -72,9 +72,6 @@ class ActivityConverter {
 
     private static List<BallerinaModel.Statement> convertPickAction(ActivityContext cx,
                                                                     TibcoModel.Scope.Flow.Activity.Pick pick) {
-        if (!cx.isStartActivity(pick)) {
-            throw new UnsupportedOperationException("Converting nested pick action not supported");
-        }
         return convertEmptyAction(cx);
     }
 

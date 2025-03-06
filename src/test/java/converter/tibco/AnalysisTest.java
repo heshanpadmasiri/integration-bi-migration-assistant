@@ -39,8 +39,7 @@ public class AnalysisTest {
         var element = TibcoToBalConverter.parseXmlFile(path.toString());
         var process = XmlToTibcoModelConverter.parseProcess(element);
         var analysisData = ModelAnalyser.analyseProcess(process);
-        assertTrue(analysisData.startActivity(process) instanceof TibcoModel.Scope.Flow.Activity.Pick);
-        assertTrue(analysisData.endActivity(process).isEmpty());
+        assertTrue(analysisData.endActivities(process).isEmpty());
         TibcoModel.Scope.Flow.Link FICOScoreTopostOut = new TibcoModel.Scope.Flow.Link("FICOScoreTopostOut");
 
         Collection<TibcoModel.Scope.Flow.Activity> sources = analysisData.sources(FICOScoreTopostOut);

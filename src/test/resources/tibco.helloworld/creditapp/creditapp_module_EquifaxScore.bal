@@ -26,21 +26,32 @@ function invoke(xml input) returns xml {
 
 function process_creditapp_module_EquifaxScore(xml input) returns xml {
     worker start_worker {
-        xml output = activityExtension(input);
-        output -> postToEnd;
-    }
-    worker postToEnd {
-        xml v0 = <- start_worker;
-        xml output0 = invoke(v0);
-        output0 -> StartTopost;
+        xml result0 = receiveEvent(input);
+        result0 -> StartTopost;
     }
     worker StartTopost {
-        xml v0 = <- postToEnd;
-        xml output0 = receiveEvent(v0);
-        output0 -> function;
+        xml result0 = <- start_worker;
+        result0 -> invoke_worker;
     }
-    xml result0 = <- StartTopost;
-    return result0;
+    worker postToEnd {
+        xml result0 = <- invoke_worker;
+        result0 -> activityExtension_worker;
+    }
+    worker activityExtension_worker {
+        xml input0 = <- postToEnd;
+        xml combinedInput = input0;
+        xml output = activityExtension(combinedInput);
+        output -> function;
+    }
+    worker invoke_worker {
+        xml input0 = <- StartTopost;
+        xml combinedInput = input0;
+        xml output = invoke(combinedInput);
+        output -> postToEnd;
+    }
+    xml result0 = <- activityExtension_worker;
+    xml result = result0;
+    return result;
 }
 
 function receiveEvent(xml input) returns xml {

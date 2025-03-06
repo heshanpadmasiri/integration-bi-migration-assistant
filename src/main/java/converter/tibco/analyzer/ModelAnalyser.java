@@ -20,12 +20,11 @@ package converter.tibco.analyzer;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
@@ -41,30 +40,14 @@ public class ModelAnalyser {
     public static AnalysisResult analyseProcess(TibcoModel.Process process) {
         ProcessAnalysisContext cx = new ProcessAnalysisContext();
         analyseProcess(cx, process);
-        assert cx.startActivity != null : "No start activity found";
-        Map<TibcoModel.Process, TibcoModel.Scope.Flow.Activity> startActivities = Map.of(process, cx.startActivity);
-        Map<TibcoModel.Process, TibcoModel.Scope.Flow.Activity> endActivities =
-                cx.endActivity != null ? Map.of(process, cx.endActivity) : Map.of();
-        record ActivityDataCollector(TibcoModel.Scope.Flow.Activity activity, AnalysisResult.ActivityData data) {
+        Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> startActivities =
+                Map.of(process, cx.startActivities);
 
-            static ActivityDataCollector from(TibcoModel.Scope.Flow.Activity activity, String functionName) {
-                return new ActivityDataCollector(activity, new AnalysisResult.ActivityData(functionName, XML, XML));
-            }
-        }
+        Map<TibcoModel.Process, Collection<TibcoModel.Scope.Flow.Activity>> endActivities =
+                Map.of(process, cx.endActivities);
+        Map<TibcoModel.Scope.Flow.Activity, AnalysisResult.ActivityData> activityData = cx.activityData();
 
-        record NameOf<E>(E object, String name) {
-
-        }
-
-        Map<TibcoModel.Scope.Flow.Activity, AnalysisResult.ActivityData> activityData =
-                cx.activities.stream()
-                        .map(activity -> new NameOf<>(activity, ProcessAnalysisContext.activityNames.get(activity)))
-                        .map(each -> ActivityDataCollector.from(each.object(), each.name()))
-                        .collect(Collectors.toMap(ActivityDataCollector::activity, ActivityDataCollector::data));
-
-        Map<TibcoModel.Scope.Flow.Link, String> workerNames =
-                cx.links.stream().map(each -> new NameOf<>(each, ProcessAnalysisContext.workerNames.get(each)))
-                        .collect(Collectors.toMap(NameOf::object, NameOf::name));
+        Map<TibcoModel.Scope.Flow.Link, String> workerNames = cx.workerNames();
         return new AnalysisResult(cx.destinationMap, cx.sourceMap, startActivities, endActivities, workerNames,
                 activityData);
     }
@@ -83,29 +66,41 @@ public class ModelAnalyser {
     }
 
     private static void analyseActivity(ProcessAnalysisContext cx, TibcoModel.Scope.Flow.Activity activity) {
+        if (activity instanceof TibcoModel.Scope.Flow.Activity.Empty) {
+            return;
+        }
         cx.allocateActivityNameIfNeeded(activity);
         if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithSources activityWithSources) {
             Collection<TibcoModel.Scope.Flow.Activity.Source> sources = activityWithSources.sources();
             if (sources.isEmpty()) {
-                cx.startActivity = activityWithSources;
+                cx.addEndActivity(activity);
             }
             sources.stream().map(TibcoModel.Scope.Flow.Activity.Source::linkName).map(
-                    TibcoModel.Scope.Flow.Link::new).forEach(link -> cx.addDestination(link, activity));
-        }
-        if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithTargets activityWithTargets) {
-            activityWithTargets.targets().stream().map(TibcoModel.Scope.Flow.Activity.Target::linkName).map(
                     TibcoModel.Scope.Flow.Link::new).forEach(link -> cx.addSource(activity, link));
         }
+        if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithTargets activityWithTargets) {
+            Collection<TibcoModel.Scope.Flow.Activity.Target> targets = activityWithTargets.targets();
+            if (targets.isEmpty()) {
+                cx.addStartActivity(activity);
+            }
+            targets.stream().map(TibcoModel.Scope.Flow.Activity.Target::linkName).map(
+                    TibcoModel.Scope.Flow.Link::new).forEach(link -> cx.addDestination(link, activity));
+        }
 
-        // TODO: handle pick
         if (activity instanceof TibcoModel.Scope.Flow.Activity.Pick pick) {
             analysePick(cx, pick);
+            return;
         }
-        // TODO: handle ExtActivity (when we have multiple process support this needs to generate a method name for the process)
+        if (!(activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithSources)) {
+            cx.addEndActivity(activity);
+        }
+
+        if (!(activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithTargets)) {
+            cx.addStartActivity(activity);
+        }
     }
 
     private static void analysePick(ProcessAnalysisContext cx, TibcoModel.Scope.Flow.Activity.Pick pick) {
-        cx.startActivity = pick;
         analyseScope(cx, pick.onMessage().scope());
     }
 
@@ -115,8 +110,8 @@ public class ModelAnalyser {
 
     private static class ProcessAnalysisContext {
 
-        private TibcoModel.Scope.Flow.Activity startActivity;
-        private TibcoModel.Scope.Flow.Activity endActivity;
+        private final Collection<TibcoModel.Scope.Flow.Activity> startActivities = new HashSet<>();
+        private final Collection<TibcoModel.Scope.Flow.Activity> endActivities = new HashSet<>();
         // places where data added to the link ends up
         private final Map<TibcoModel.Scope.Flow.Link, Collection<TibcoModel.Scope.Flow.Activity>> destinationMap =
                 new HashMap<>();
@@ -125,32 +120,30 @@ public class ModelAnalyser {
         private final Map<TibcoModel.Scope.Flow.Link, Collection<TibcoModel.Scope.Flow.Activity>> sourceMap =
                 new HashMap<>();
 
-        private final Set<TibcoModel.Scope.Flow.Link> links = new HashSet<>();
-        private final Set<TibcoModel.Scope.Flow.Activity> activities = new HashSet<>();
+        private final Map<TibcoModel.Scope.Flow.Link, String> linkWorkerNames = new HashMap<>();
+        private final Map<TibcoModel.Scope.Flow.Activity, String> activityWorkerNames = new HashMap<>();
+        private static final Map<TibcoModel.Scope.Flow.Activity, String> activityFunctionNames =
+                new ConcurrentHashMap<>();
 
-        private static final Map<TibcoModel.Scope.Flow.Link, String> workerNames = new ConcurrentHashMap<>();
-        private static final Map<TibcoModel.Scope.Flow.Activity, String> activityNames = new ConcurrentHashMap<>();
+        public void addEndActivity(TibcoModel.Scope.Flow.Activity activity) {
+            endActivities.add(activity);
+        }
 
-        public void setStartActivity(TibcoModel.Scope.Flow.Activity activity) {
-            if (startActivity != null) {
-                throw new IllegalStateException("Start activity already set");
-            }
-            startActivity = activity;
+        public void addStartActivity(TibcoModel.Scope.Flow.Activity activity) {
+            startActivities.add(activity);
         }
 
         public void allocateWorkerIfNeeded(TibcoModel.Scope.Flow.Link link) {
-            links.add(link);
-            if (workerNames.containsKey(link)) {
+            if (linkWorkerNames.containsKey(link)) {
                 return;
             }
 
-            String workerName = ConversionUtils.getSanitizedUniqueName(link.name(), workerNames.values());
-            workerNames.put(link, workerName);
+            String workerName = ConversionUtils.getSanitizedUniqueName(link.name(), linkWorkerNames.values());
+            linkWorkerNames.put(link, workerName);
         }
 
         public void allocateActivityNameIfNeeded(TibcoModel.Scope.Flow.Activity activity) {
-            activities.add(activity);
-            if (activityNames.containsKey(activity)) {
+            if (activityFunctionNames.containsKey(activity)) {
                 return;
             }
             String prefix = switch (activity) {
@@ -162,8 +155,9 @@ public class ModelAnalyser {
                 case TibcoModel.Scope.Flow.Activity.ReceiveEvent ignored -> "receiveEvent";
                 case TibcoModel.Scope.Flow.Activity.Reply ignored -> "reply";
             };
-            String activityName = ConversionUtils.getSanitizedUniqueName(prefix, activityNames.values());
-            activityNames.put(activity, activityName);
+            String activityName = ConversionUtils.getSanitizedUniqueName(prefix, activityFunctionNames.values());
+            activityFunctionNames.put(activity, activityName);
+            activityWorkerNames.put(activity, activityName + "_worker");
         }
 
         public void addDestination(TibcoModel.Scope.Flow.Link source, TibcoModel.Scope.Flow.Activity activity) {
@@ -172,6 +166,20 @@ public class ModelAnalyser {
 
         public void addSource(TibcoModel.Scope.Flow.Activity source, TibcoModel.Scope.Flow.Link destination) {
             sourceMap.computeIfAbsent(destination, (ignored) -> new ArrayList<>()).add(source);
+        }
+
+        public Map<TibcoModel.Scope.Flow.Activity, AnalysisResult.ActivityData> activityData() {
+            Map<TibcoModel.Scope.Flow.Activity, AnalysisResult.ActivityData> data = new HashMap<>();
+            for (var activity : activityWorkerNames.keySet()) {
+                String functionName = activityFunctionNames.get(activity);
+                String workerName = activityWorkerNames.get(activity);
+                data.put(activity, new AnalysisResult.ActivityData(functionName, workerName, XML, XML));
+            }
+            return Collections.unmodifiableMap(data);
+        }
+
+        public Map<TibcoModel.Scope.Flow.Link, String> workerNames() {
+            return Collections.unmodifiableMap(linkWorkerNames);
         }
     }
 }

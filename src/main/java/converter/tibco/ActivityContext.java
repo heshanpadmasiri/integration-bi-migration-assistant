@@ -24,7 +24,6 @@ import java.util.Optional;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
-import org.jetbrains.annotations.NotNull;
 import tibco.TibcoModel;
 
 class ActivityContext {
@@ -43,35 +42,12 @@ class ActivityContext {
         this.processContext = processContext;
     }
 
-    BallerinaModel.Expression.VariableReference inputVariable() {
-        return new BallerinaModel.Expression.VariableReference("input");
-    }
-
     BallerinaModel.Expression.VariableReference getInputAsXml() {
-//        if (inputXMLVarName == null) {
-//            addTypeConversionLogic(body);
-//        }
         return new BallerinaModel.Expression.VariableReference("input");
-    }
-
-    private void addTypeConversionLogic(List<BallerinaModel.Statement> body) {
-        BallerinaModel.Expression.TernaryExpression ternaryExpr = addTypeConversionIfNeeded(inputVariable());
-        String inputXML = "inputXML";
-        body.add(new BallerinaModel.VarDeclStatment(XML, inputXML, ternaryExpr));
-        inputXMLVarName = inputXML;
-    }
-
-    private BallerinaModel.Expression.@NotNull TernaryExpression addTypeConversionIfNeeded(
-            BallerinaModel.Expression.VariableReference inputVariable) {
-        BallerinaModel.Expression.TypeCheckExpression checkIsXML =
-                new BallerinaModel.Expression.TypeCheckExpression(inputVariable, XML);
-        String toXMLFunction = processContext.getToXmlFunction();
-        return new BallerinaModel.Expression.TernaryExpression(checkIsXML, inputVariable,
-                new BallerinaModel.Expression.FunctionCall(toXMLFunction, new String[]{inputVariable.varName()}));
     }
 
     public boolean isStartActivity(TibcoModel.Scope.Flow.Activity activity) {
-        return processContext.analysisResult.startActivity(processContext.process).equals(activity);
+        return processContext.analysisResult.startActivities(processContext.process).equals(activity);
     }
 
     public ProjectContext.FunctionData getProcessStartFunctionName(String processName) {
