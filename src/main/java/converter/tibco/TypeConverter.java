@@ -75,7 +75,10 @@ class TypeConverter {
             switch (member) {
                 case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Element element -> {
                     BallerinaModel.TypeDesc typeDesc = cx.getTypeByName(element.type().name());
-                    fields.add(new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField(element.name(), typeDesc));
+                    // FIXME: this is not going to get mapped correctly
+                    //  -- Can we escape in our names
+                    String name = ConversionUtils.sanitizes(element.name());
+                    fields.add(new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField(name, typeDesc));
                 }
                 case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest ignored -> // FIXME: handle this properly
                         rest = Optional.of(ANYDATA);

@@ -115,12 +115,12 @@ type JSONTransformException JSONTransformExceptionType;
 
 type outputHeadersType record {
     string Allow;
-    string Content -Type;
-    string Content -Length;
-    string Content -Encoding;
+    string Content_Type;
+    string Content_Length;
+    string Content_Encoding;
     string Date;
     string Location;
-    string Set -Cookie;
+    string Set_Cookie;
     string Pragma;
 };
 
@@ -150,9 +150,9 @@ type FaultDetail record {
 
 type inputHeadersType record {
     string Accept;
-    string Accept -Charset;
-    string Accept -Encoding;
-    string Content -Type;
+    string Accept_Charset;
+    string Accept_Encoding;
+    string Content_Type;
     string Cookie;
     string Pragma;
 };
@@ -184,10 +184,10 @@ type ActivityOutputClassType record {
 type ActivityTimedOutException BaseExceptionType;
 
 type mimeHeadersType record {|
-    string content -disposition;
-    string content-type;
-    string content -transfer - encoding;
-    string content -id;
+    string content_disposition;
+    string content_type;
+    string content_transfer_encoding;
+    string content_id;
     anydata...;
 |};
 
