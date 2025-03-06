@@ -47,11 +47,11 @@ class ActivityContext {
         return new BallerinaModel.Expression.VariableReference("input");
     }
 
-    BallerinaModel.Expression.VariableReference getInputAsXml(List<BallerinaModel.Statement> body) {
-        if (inputXMLVarName == null) {
-            addTypeConversionLogic(body);
-        }
-        return new BallerinaModel.Expression.VariableReference(inputXMLVarName);
+    BallerinaModel.Expression.VariableReference getInputAsXml() {
+//        if (inputXMLVarName == null) {
+//            addTypeConversionLogic(body);
+//        }
+        return new BallerinaModel.Expression.VariableReference("input");
     }
 
     private void addTypeConversionLogic(List<BallerinaModel.Statement> body) {
@@ -74,7 +74,7 @@ class ActivityContext {
         return processContext.analysisResult.startActivity(processContext.process).equals(activity);
     }
 
-    public String getProcessStartFunctionName(String processName) {
+    public ProjectContext.FunctionData getProcessStartFunctionName(String processName) {
         return processContext.getProcessStartFunction(processName);
     }
 

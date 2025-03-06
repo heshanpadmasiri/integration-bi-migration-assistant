@@ -1,8 +1,10 @@
 package ballerina;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules) {
@@ -192,6 +194,10 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     public sealed interface Expression {
 
         record FunctionCall(String functionName, String[] args) implements Expression {
+
+            public FunctionCall(String functionName, Expression[] args) {
+                this(functionName, Arrays.stream(args).map(Objects::toString).toArray(String[]::new));
+            }
 
             @Override
             public String toString() {

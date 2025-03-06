@@ -9,7 +9,7 @@ service /CreditDetails on creditapp_module_MainProcess_listener {
     }
 }
 
-public function creditapp_module_MainProcess_start(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema {
+function creditapp_module_MainProcess_start(GiveNewSchemaNameHere input) returns CreditScoreSuccessSchema {
     xml inputXML = toXML(input);
     xml xmlResult = process_creditapp_module_MainProcess(inputXML);
     CreditScoreSuccessSchema result = convertToCreditScoreSuccessSchema(xmlResult);
@@ -17,18 +17,15 @@ public function creditapp_module_MainProcess_start(GiveNewSchemaNameHere input) 
 }
 
 function empty(xml input) returns xml {
-    xml inputXML = input is xml ? input : toXML(input);
-    return inputXML;
+    return input;
 }
 
 function empty_2(xml input) returns xml {
-    xml inputXML = input is xml ? input : toXML(input);
-    return inputXML;
+    return input;
 }
 
 function extActivity(xml input) returns xml {
-    xml inputXML = input is xml ? input : toXML(input);
-    xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
+    xml var0 = checkpanic xslt:transform(input, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
     <xsl:param name="post.item"/>
     <xsl:template name="FICOScore-input" match="/">
@@ -56,12 +53,11 @@ function extActivity(xml input) returns xml {
         </tns:GiveNewSchemaNameHere>
     </xsl:template>
 </xsl:stylesheet>`);
-    creditapp_module_EquifaxScore_start(var0);
+    return toXML(creditapp_module_EquifaxScore_start(convertToGiveNewSchemaNameHere(var0)));
 }
 
 function extActivity_5(xml input) returns xml {
-    xml inputXML = input is xml ? input : toXML(input);
-    xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
+    xml var0 = checkpanic xslt:transform(input, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns3="http://xmlns.example.com/Creditscore/parameters" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
     <xsl:param name="post.item"/>
     <xsl:template name="ExperianScore-input" match="/">
@@ -89,12 +85,11 @@ function extActivity_5(xml input) returns xml {
         </tns:GiveNewSchemaNameHere>
     </xsl:template>
 </xsl:stylesheet>`);
-    creditapp_module_ExperianScore_start(var0);
+    return toXML(creditapp_module_ExperianScore_start(convertToGiveNewSchemaNameHere(var0)));
 }
 
 function pick(xml input) returns xml {
-    xml inputXML = input is xml ? input : toXML(input);
-    return inputXML;
+    return input;
 }
 
 function process_creditapp_module_MainProcess(xml input) returns xml {
@@ -119,8 +114,7 @@ function process_creditapp_module_MainProcess(xml input) returns xml {
 }
 
 function reply(xml input) returns xml {
-    xml inputXML = input is xml ? input : toXML(input);
-    xml var0 = checkpanic xslt:transform(inputXML, xml `<?xml version="1.0" encoding="UTF-8"?>
+    xml var0 = checkpanic xslt:transform(input, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns1="http://xmlns.example.com/20180827160122PLT" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" xmlns:tns2="http://tns.tibco.com/bw/json/1535671685533" version="2.0">
     <xsl:param name="EquifaxScore"/>
     <xsl:param name="ExperianScore"/>

@@ -9,18 +9,22 @@ service / on creditapp_module_ExperianScore_listener {
 }
 
 function activityExtension_10(xml input) returns xml {
+    return input;
 }
 
 function activityExtension_11(xml input) returns xml {
+    return input;
 }
 
 function activityExtension_12(xml input) returns xml {
+    return input;
 }
 
 function activityExtension_13(xml input) returns xml {
+    return input;
 }
 
-public function creditapp_module_ExperianScore_start(GiveNewSchemaNameHere input) returns ExperianResponseSchemaElement {
+function creditapp_module_ExperianScore_start(GiveNewSchemaNameHere input) returns ExperianResponseSchemaElement {
     xml inputXML = toXML(input);
     xml xmlResult = process_creditapp_module_ExperianScore(inputXML);
     ExperianResponseSchemaElement result = convertToExperianResponseSchemaElement(xmlResult);
@@ -57,4 +61,5 @@ function process_creditapp_module_ExperianScore(xml input) returns xml {
 }
 
 function receiveEvent_9(xml input) returns xml {
+    return input;
 }

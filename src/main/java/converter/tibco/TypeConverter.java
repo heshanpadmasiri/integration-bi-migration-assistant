@@ -187,9 +187,9 @@ class TypeConverter {
                 ? returnTypeMembers.getFirst()
                 : new BallerinaModel.TypeDesc.UnionTypeDesc(returnTypeMembers);
         cx.processReturnType = cx.getTypeByName(messageTypes.get(operation.output().message().value()));
-        String portHandler = cx.getProcessStartFunctionName();
+        var startFunction = cx.getProcessStartFunction();
         List<BallerinaModel.Statement> body = List.of(new BallerinaModel.Return<>(Optional.of(
-                new BallerinaModel.Expression.FunctionCall(portHandler, new String[]{"input"}))));
+                new BallerinaModel.Expression.FunctionCall(startFunction.name(), new String[]{"input"}))));
         return new BallerinaModel.Resource(resourceMethodName, path, parameters, Optional.of(returnType.toString()),
                 body);
     }

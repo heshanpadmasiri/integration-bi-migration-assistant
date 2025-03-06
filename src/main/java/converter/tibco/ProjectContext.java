@@ -112,11 +112,11 @@ public class ProjectContext {
                 List.of(), List.of());
     }
 
-    private String getProcessStartFunction(String processName) {
+    private FunctionData getProcessStartFunction(String processName) {
         TibcoModel.Process
                 process = processContextMap.keySet().stream().filter(proc -> proc.name().equals(processName)).findAny()
                 .orElseThrow(() -> new IndexOutOfBoundsException("failed to find process" + processName));
-        return getProcessContext(process).getProcessStartFunctionName();
+        return getProcessContext(process).getProcessStartFunction();
     }
 
     BallerinaModel.TypeDesc getTypeByName(String name, ProcessContext processContext) {
@@ -247,8 +247,9 @@ public class ProjectContext {
                     functions, List.of());
         }
 
-        public String getProcessStartFunctionName() {
-            return ConversionUtils.sanitizes(process.name()) + "_start";
+        public FunctionData getProcessStartFunction() {
+            return new FunctionData(ConversionUtils.sanitizes(process.name()) + "_start", processInputType,
+                    processReturnType);
         }
 
         public String getProcessFunction() {
@@ -264,9 +265,17 @@ public class ProjectContext {
             return projectContext.createConvertToTypeFunction(targetType);
         }
 
-        public String getProcessStartFunction(String processName) {
+        public FunctionData getProcessStartFunction(String processName) {
             return projectContext.getProcessStartFunction(processName);
         }
     }
 
+    record FunctionData(String name, BallerinaModel.TypeDesc inputType, BallerinaModel.TypeDesc returnType) {
+
+        FunctionData {
+            assert name != null && !name.isEmpty();
+            assert inputType != null;
+            assert returnType != null;
+        }
+    }
 }

@@ -286,8 +286,9 @@ public class TibcoToBallerinaModelConverter {
                 new BallerinaModel.Return<>(Optional.of(new BallerinaModel.Expression.VariableReference("result")));
         body.add(returnStatement);
 
-        return BallerinaModel.Function.publicFunction(
-                cx.getProcessStartFunctionName(),
+        return new BallerinaModel.Function(
+                Optional.empty(),
+                cx.getProcessStartFunction().name(),
                 List.of(new BallerinaModel.Parameter(inputType, inputVariable)),
                 Optional.of(returnType.toString()),
                 body);

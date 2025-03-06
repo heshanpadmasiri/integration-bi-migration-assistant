@@ -56,7 +56,7 @@ class ActivityConverter {
     private static List<BallerinaModel.Statement> convertReply(ActivityContext cx,
                                                                TibcoModel.Scope.Flow.Activity.Reply reply) {
         List<BallerinaModel.Statement> body = new ArrayList<>();
-        BallerinaModel.Expression.VariableReference input = cx.getInputAsXml(body);
+        BallerinaModel.Expression.VariableReference input = cx.getInputAsXml();
         BallerinaModel.Expression.VariableReference result;
         if (reply.inputBindings().isEmpty()) {
             result = input;
@@ -80,7 +80,7 @@ class ActivityConverter {
 
     private static List<BallerinaModel.Statement> convertEmptyAction(ActivityContext cx) {
         List<BallerinaModel.Statement> body = new ArrayList<>();
-        BallerinaModel.Expression.VariableReference inputXml = cx.getInputAsXml(body);
+        BallerinaModel.Expression.VariableReference inputXml = cx.getInputAsXml();
         body.add(new BallerinaModel.Return<>(Optional.of(inputXml)));
         return body;
     }
@@ -88,35 +88,45 @@ class ActivityConverter {
     private static List<BallerinaModel.Statement> convertActivityExtension(ActivityContext cx,
                                                                            TibcoModel.Scope.Flow.Activity.ActivityExtension activityExtension) {
         // FIXME:
-        return List.of();
+        return List.of(new BallerinaModel.Return<>(cx.getInputAsXml()));
     }
 
     private static List<BallerinaModel.Statement> convertReceiveEvent(ActivityContext cx,
                                                                       TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent) {
         // FIXME:
-        return List.of();
+        return List.of(new BallerinaModel.Return<>(cx.getInputAsXml()));
     }
 
     private static List<BallerinaModel.Statement> convertInvoke(ActivityContext cx,
                                                                 TibcoModel.Scope.Flow.Activity.Invoke invoke) {
         // FIXME:
-        return List.of();
+        return List.of(new BallerinaModel.Return<>(cx.getInputAsXml()));
     }
 
     private static List<BallerinaModel.Statement> convertExtActivity(ActivityContext fx,
                                                                      TibcoModel.Scope.Flow.Activity.ExtActivity extActivity) {
         List<BallerinaModel.Statement> body = new ArrayList<>();
-        BallerinaModel.Expression.VariableReference result = fx.getInputAsXml(body);
+        BallerinaModel.Expression.VariableReference result = fx.getInputAsXml();
         if (!extActivity.inputBindings().isEmpty()) {
             List<BallerinaModel.VarDeclStatment> inputBindings =
                     convertInputBindings(fx, result, extActivity.inputBindings());
             body.addAll(inputBindings);
             result = new BallerinaModel.Expression.VariableReference(inputBindings.getLast().varName());
         }
-        String startFunctionName = fx.getProcessStartFunctionName(extActivity.callProcess().subprocessName());
+        // FIXME: convert to type
+        var startFunction = fx.getProcessStartFunctionName(extActivity.callProcess().subprocessName());
+
+        String convertToTypeFunction = fx.processContext.getConvertToTypeFunction(startFunction.inputType());
+        BallerinaModel.Expression.FunctionCall convertToTypeFunctionCall =
+                new BallerinaModel.Expression.FunctionCall(convertToTypeFunction, new String[]{result.varName()});
+
         BallerinaModel.Expression.FunctionCall startFunctionCall =
-                new BallerinaModel.Expression.FunctionCall(startFunctionName, new String[]{result.varName()});
-        body.add(new BallerinaModel.CallStatement(startFunctionCall));
+                new BallerinaModel.Expression.FunctionCall(startFunction.name(),
+                        new BallerinaModel.Expression[]{convertToTypeFunctionCall});
+        BallerinaModel.Expression.FunctionCall convertToXmlCall =
+                new BallerinaModel.Expression.FunctionCall(fx.processContext.getToXmlFunction(),
+                        new BallerinaModel.Expression[]{startFunctionCall});
+        body.add(new BallerinaModel.Return<>(convertToXmlCall));
         return body;
     }
 

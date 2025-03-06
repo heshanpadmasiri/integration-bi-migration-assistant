@@ -10,9 +10,10 @@ service /y54cuadtcxtfstqs3rux2gfdaxppoqgc on creditapp_module_EquifaxScore_liste
 }
 
 function activityExtension(xml input) returns xml {
+    return input;
 }
 
-public function creditapp_module_EquifaxScore_start(GiveNewSchemaNameHere input) returns SuccessSchema {
+function creditapp_module_EquifaxScore_start(GiveNewSchemaNameHere input) returns SuccessSchema {
     xml inputXML = toXML(input);
     xml xmlResult = process_creditapp_module_EquifaxScore(inputXML);
     SuccessSchema result = convertToSuccessSchema(xmlResult);
@@ -20,6 +21,7 @@ public function creditapp_module_EquifaxScore_start(GiveNewSchemaNameHere input)
 }
 
 function invoke(xml input) returns xml {
+    return input;
 }
 
 function process_creditapp_module_EquifaxScore(xml input) returns xml {
@@ -42,4 +44,5 @@ function process_creditapp_module_EquifaxScore(xml input) returns xml {
 }
 
 function receiveEvent(xml input) returns xml {
+    return input;
 }
