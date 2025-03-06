@@ -2,9 +2,9 @@ import ballerina/data.xmldata;
 import ballerina/http;
 
 const string client_404_RecordNotFound = "Record Not Found";
-listener http:Listener LISTENER = new (8081, {host: "localhost"});
+listener http:Listener creditapp_module_EquifaxScore_listener = new (8081, {host: "localhost"});
 
-service /y54cuadtcxtfstqs3rux2gfdaxppoqgc on LISTENER {
+service /y54cuadtcxtfstqs3rux2gfdaxppoqgc on creditapp_module_EquifaxScore_listener {
     resource function post creditscore(GiveNewSchemaNameHere input) returns SuccessSchema|http:NotFound|http:InternalServerError|client_404_RecordNotFound {
         return creditapp_module_EquifaxScore_start(input);
     }

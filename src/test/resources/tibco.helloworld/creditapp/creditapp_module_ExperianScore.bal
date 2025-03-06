@@ -1,9 +1,9 @@
 import ballerina/data.xmldata;
 import ballerina/http;
 
-listener http:Listener LISTENER = new (8082, {host: "localhost"});
+listener http:Listener creditapp_module_ExperianScore_listener = new (8082, {host: "localhost"});
 
-service / on LISTENER {
+service / on creditapp_module_ExperianScore_listener {
     resource function post creditscore(GiveNewSchemaNameHere input) returns ExperianResponseSchemaElement|http:NotFound|http:InternalServerError {
         return creditapp_module_ExperianScore_start(input);
     }

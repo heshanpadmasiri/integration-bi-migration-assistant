@@ -200,7 +200,7 @@ public class ProjectContext {
         String getDefaultHttpListenerRef() {
             if (defaultListner == null) {
                 addLibraryImport(Library.HTTP);
-                String listenerRef = "LISTENER";
+                String listenerRef = ConversionUtils.sanitizes(process.name()) + "_listener";
                 defaultListner = new BallerinaModel.Listener(BallerinaModel.ListenerType.HTTP, listenerRef,
                         Integer.toString(projectContext.allocatePort()),
                         Map.of("host", "localhost"));
