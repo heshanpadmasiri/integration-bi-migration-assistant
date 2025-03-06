@@ -24,7 +24,7 @@ import java.util.Optional;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
-import converter.tibco.analyzer.AnalysisResult;
+import org.jetbrains.annotations.NotNull;
 import tibco.TibcoModel;
 
 class ActivityContext {
@@ -32,7 +32,6 @@ class ActivityContext {
     public final ProjectContext.ProcessContext processContext;
     private final TibcoModel.Scope.Flow.Activity activity;
     private int varCounter = 0;
-    private final int index;
     private String inputXMLVarName = null;
 
     String getAnnonVarName() {
@@ -42,7 +41,6 @@ class ActivityContext {
     ActivityContext(ProjectContext.ProcessContext processContext, TibcoModel.Scope.Flow.Activity activity) {
         this.activity = activity;
         this.processContext = processContext;
-        index = processContext.activityCounter++;
     }
 
     BallerinaModel.Expression.VariableReference inputVariable() {
@@ -51,20 +49,25 @@ class ActivityContext {
 
     BallerinaModel.Expression.VariableReference getInputAsXml(List<BallerinaModel.Statement> body) {
         if (inputXMLVarName == null) {
-            String inputXML = "inputXML";
-            String toXMLFunction = processContext.getToXmlFunction();
-            BallerinaModel.Expression.VariableReference inputVariable = inputVariable();
-            BallerinaModel.Expression.TypeCheckExpression checkIsXML =
-                    new BallerinaModel.Expression.TypeCheckExpression(inputVariable,
-                            XML);
-            BallerinaModel.Expression.TernaryExpression ternaryExpr =
-                    new BallerinaModel.Expression.TernaryExpression(checkIsXML, inputVariable,
-                            new BallerinaModel.Expression.FunctionCall(toXMLFunction,
-                                    new String[]{inputVariable.varName()}));
-            body.add(new BallerinaModel.VarDeclStatment(XML, inputXML, ternaryExpr));
-            inputXMLVarName = inputXML;
+            addTypeConversionLogic(body);
         }
         return new BallerinaModel.Expression.VariableReference(inputXMLVarName);
+    }
+
+    private void addTypeConversionLogic(List<BallerinaModel.Statement> body) {
+        BallerinaModel.Expression.TernaryExpression ternaryExpr = addTypeConversionIfNeeded(inputVariable());
+        String inputXML = "inputXML";
+        body.add(new BallerinaModel.VarDeclStatment(XML, inputXML, ternaryExpr));
+        inputXMLVarName = inputXML;
+    }
+
+    private BallerinaModel.Expression.@NotNull TernaryExpression addTypeConversionIfNeeded(
+            BallerinaModel.Expression.VariableReference inputVariable) {
+        BallerinaModel.Expression.TypeCheckExpression checkIsXML =
+                new BallerinaModel.Expression.TypeCheckExpression(inputVariable, XML);
+        String toXMLFunction = processContext.getToXmlFunction();
+        return new BallerinaModel.Expression.TernaryExpression(checkIsXML, inputVariable,
+                new BallerinaModel.Expression.FunctionCall(toXMLFunction, new String[]{inputVariable.varName()}));
     }
 
     public boolean isStartActivity(TibcoModel.Scope.Flow.Activity activity) {
@@ -76,12 +79,11 @@ class ActivityContext {
     }
 
     public String functionName() {
-        AnalysisResult.ActivityData activityData = processContext.analysisResult.from(activity);
-        return activityData.functionName();
+        return processContext.analysisResult.from(activity).functionName();
     }
 
     public List<BallerinaModel.Parameter> parameters() {
-        return List.of(new BallerinaModel.Parameter(XML.toString(), "input"));
+        return List.of(new BallerinaModel.Parameter(XML, "input"));
     }
 
     public Optional<String> returnType() {

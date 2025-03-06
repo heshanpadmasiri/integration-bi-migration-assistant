@@ -173,7 +173,7 @@ class TypeConverter {
         BallerinaModel.TypeDesc inputType = cx.getTypeByName(messageTypes.get(operation.input().message().value()));
         cx.processInputType = inputType;
         List<BallerinaModel.Parameter> parameters =
-                List.of(new BallerinaModel.Parameter(inputType.toString(), "input"));
+                List.of(new BallerinaModel.Parameter(inputType, "input"));
         List<BallerinaModel.TypeDesc> returnTypeMembers =
                 Stream.concat(
                                 Stream.of(operation.output().message()),

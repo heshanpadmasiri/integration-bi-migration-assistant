@@ -26,6 +26,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public sealed interface TypeDesc {
 
+        record MapTypeDesc(TypeDesc typeDesc) implements TypeDesc {
+
+            @Override
+            public String toString() {
+                return "map<" + typeDesc + ">";
+            }
+        }
+
         record RecordTypeDesc(List<TypeDesc> inclusions, List<RecordField> fields, Optional<TypeDesc> rest)
                 implements TypeDesc {
 
@@ -143,12 +151,18 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     public record Function(Optional<String> visibilityQualifier, String methodName, List<Parameter> parameters,
                            Optional<String> returnType,
                            List<Statement> body) {
+
+        public static Function publicFunction(String name, List<Parameter> parameters, Optional<String> returnType,
+                                              List<Statement> body) {
+            return new Function(Optional.of("public"), name, parameters, returnType, body);
+        }
     }
 
     public record Parameter(String name, String type, Optional<BallerinaExpression> defaultExpr) {
 
-        public Parameter(String type, String name) {
-            this(name, type, Optional.empty());
+        // FIXME: refactor this to accept type desc
+        public Parameter(TypeDesc typeDesc, String name) {
+            this(name, typeDesc.toString(), Optional.empty());
         }
     }
 
@@ -228,6 +242,10 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     }
 
     public record Return<E extends Expression>(Optional<E> value) implements Statement {
+
+        public Return(E value) {
+            this(Optional.of(value));
+        }
 
         @Override
         public String toString() {

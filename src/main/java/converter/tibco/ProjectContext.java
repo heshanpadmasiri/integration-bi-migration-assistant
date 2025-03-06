@@ -28,6 +28,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
+
 import ballerina.BallerinaModel;
 import converter.tibco.analyzer.AnalysisResult;
 import converter.tibco.analyzer.ModelAnalyser;
@@ -37,9 +40,14 @@ public class ProjectContext {
 
     private final Map<TibcoModel.Process, ProcessContext> processContextMap = new HashMap<>();
     private final Map<String, Optional<BallerinaModel.ModuleTypeDef>> moduleTypeDefs = new HashMap<>();
+    private int nextPort = 8080;
 
     ProcessContext getProcessContext(TibcoModel.Process process) {
         return processContextMap.computeIfAbsent(process, p -> new ProcessContext(this, p));
+    }
+
+    private int allocatePort() {
+        return nextPort++;
     }
 
     public BallerinaModel.Module serialize(Collection<BallerinaModel.TextDocument> textDocuments) {
@@ -116,7 +124,7 @@ public class ProjectContext {
             case "string" -> Optional.of(BallerinaModel.TypeDesc.BuiltinType.STRING);
             case "integer", "int" -> Optional.of(BallerinaModel.TypeDesc.BuiltinType.INT);
             case "anydata" -> Optional.of(BallerinaModel.TypeDesc.BuiltinType.ANYDATA);
-            case "xml" -> Optional.of(BallerinaModel.TypeDesc.BuiltinType.XML);
+            case "xml" -> Optional.of(XML);
             // FIXME:
             case "base64Binary" -> Optional.of(BallerinaModel.TypeDesc.BuiltinType.INT);
             default -> Optional.empty();
@@ -126,7 +134,7 @@ public class ProjectContext {
     static class ProcessContext {
 
         private final Set<BallerinaModel.Import> imports = new HashSet<>();
-        private final List<BallerinaModel.Listener> listeners = new ArrayList<>();
+        private BallerinaModel.Listener defaultListner = null;
         private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
         private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
         private final Map<BallerinaModel.TypeDesc, String> typeConversionFunction = new HashMap<>();
@@ -152,7 +160,7 @@ public class ProjectContext {
                 addLibraryImport(Library.XML_DATA);
                 String functionName = "toXML";
                 utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
-                        List.of(new BallerinaModel.Parameter("map<anydata>", "data")),
+                        List.of(new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(ANYDATA), "data")),
                         Optional.of("xml"), List.of(new BallerinaModel.Return<>(
                         Optional.of(new BallerinaModel.Expression.CheckPanic(
                                 new BallerinaModel.Expression.FunctionCall("xmldata:toXml", new String[]{"data"})))))));
@@ -190,17 +198,14 @@ public class ProjectContext {
         }
 
         String getDefaultHttpListenerRef() {
-            // FIXME: this needs to increment ports so push the port to conversion context
-            if (listeners.isEmpty()) {
+            if (defaultListner == null) {
                 addLibraryImport(Library.HTTP);
                 String listenerRef = "LISTENER";
-                listeners.add(
-                        new BallerinaModel.Listener(BallerinaModel.ListenerType.HTTP, listenerRef, "8080",
-                                Map.of("host", "localhost")));
-                return listenerRef;
-            } else {
-                return listeners.getFirst().name();
+                defaultListner = new BallerinaModel.Listener(BallerinaModel.ListenerType.HTTP, listenerRef,
+                        Integer.toString(projectContext.allocatePort()),
+                        Map.of("host", "localhost"));
             }
+            return defaultListner.name();
 
         }
 
@@ -211,8 +216,9 @@ public class ProjectContext {
             String name = ConversionUtils.sanitizes(process.name()) + ".bal";
             List<BallerinaModel.Function> combinedFunctions =
                     Stream.concat(functions.stream(), utilityFunctions.stream()).toList();
+            List<BallerinaModel.Listener> listeners = defaultListner != null ? List.of(defaultListner) : List.of();
             return new BallerinaModel.TextDocument(name, imports.stream().toList(), List.of(),
-                    constants.values().stream().toList(), listeners.stream().toList(), List.of(processService),
+                    constants.values().stream().toList(), listeners, List.of(processService),
                     combinedFunctions, List.of());
         }
 
@@ -238,7 +244,7 @@ public class ProjectContext {
             BallerinaModel.Return<BallerinaModel.Expression.CheckPanic> returnStmt =
                     new BallerinaModel.Return<>(Optional.of(checkPanic));
             BallerinaModel.Function function = new BallerinaModel.Function(Optional.empty(), functionName,
-                    List.of(new BallerinaModel.Parameter("xml", "input")), Optional.of(targetType.toString()),
+                    List.of(new BallerinaModel.Parameter(XML, "input")), Optional.of(targetType.toString()),
                     List.of(returnStmt));
             utilityFunctions.add(function);
             return functionName;
