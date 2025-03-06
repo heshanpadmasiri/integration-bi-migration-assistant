@@ -40,6 +40,7 @@ public class ModelAnalyser {
     public static AnalysisResult analyseProcess(TibcoModel.Process process) {
         ProcessAnalysisContext cx = new ProcessAnalysisContext();
         analyseProcess(cx, process);
+        assert cx.startActivity != null : "No start activity found";
         Map<TibcoModel.Process, TibcoModel.Scope.Flow.Activity> startActivities = Map.of(process, cx.startActivity);
         Map<TibcoModel.Process, TibcoModel.Scope.Flow.Activity> endActivities =
                 cx.endActivity != null ? Map.of(process, cx.endActivity) : Map.of();
@@ -73,7 +74,11 @@ public class ModelAnalyser {
     private static void analyseActivity(ProcessAnalysisContext cx, TibcoModel.Scope.Flow.Activity activity) {
         cx.allocateActivityNameIfNeeded(activity);
         if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithSources activityWithSources) {
-            activityWithSources.sources().stream().map(TibcoModel.Scope.Flow.Activity.Source::linkName).map(
+            Collection<TibcoModel.Scope.Flow.Activity.Source> sources = activityWithSources.sources();
+            if (sources.isEmpty()) {
+                cx.startActivity = activityWithSources;
+            }
+            sources.stream().map(TibcoModel.Scope.Flow.Activity.Source::linkName).map(
                     TibcoModel.Scope.Flow.Link::new).forEach(link -> cx.addDestination(link, activity));
         }
         if (activity instanceof TibcoModel.Scope.Flow.Activity.ActivityWithTargets activityWithTargets) {

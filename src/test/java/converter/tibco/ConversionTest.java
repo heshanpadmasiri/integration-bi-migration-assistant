@@ -21,11 +21,19 @@ package converter.tibco;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 
+import static converter.tibco.TibcoToBalConverter.parseXmlFile;
+
+import ballerina.BallerinaModel;
+import ballerina.CodeGenerator;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.w3c.dom.Element;
+import tibco.TibcoModel;
 
 public class ConversionTest {
 
@@ -37,7 +45,7 @@ public class ConversionTest {
     @Test(groups = {"tibco", "converter"}, dataProvider = "testCaseProvider")
     public void testBallerinaModelConverter(Path path, TestUtils.TestKind kind) {
         try {
-            var element = TibcoToBalConverter.parseXmlFile(path.toString());
+            var element = parseXmlFile(path.toString());
             var process = XmlToTibcoModelConverter.parseProcess(element);
             var module = TibcoToBallerinaModelConverter.convertProcess(process);
             // TODO: figure out how to validate the module
@@ -53,11 +61,34 @@ public class ConversionTest {
 
     @Test
     public void test() throws IOException {
-        Path path = Path.of("src/test/resources/tibco/main-t.bwp");
-        SyntaxTree syntaxTree = TibcoToBalConverter.convertToBallerina(path.toString());
-        String source = syntaxTree.toSourceCode();
-        String expectedSource = Files.readString(Path.of(path.toString().replace(".bwp", ".bal")));
-        Assert.assertEquals(source, expectedSource);
+        String resourceDir = "src/test/resources/tibco.helloworld/";
+        List<TibcoModel.Process> processes =
+                Stream.of("MainProcess.bwp", "EquifaxScore.bwp", "ExperianScore.bwp").map(each -> resourceDir + each)
+                        .map(Path::of)
+                        .map(ConversionTest::parse).toList();
+        BallerinaModel.Module module = TibcoToBallerinaModelConverter.convertProcesses(processes);
+        for (BallerinaModel.TextDocument textDocument : module.textDocuments()) {
+            System.out.println(textDocument);
+            BallerinaModel.Module tmpModule = new BallerinaModel.Module(module.name(), List.of(textDocument));
+            BallerinaModel ballerinaModel =
+                    new BallerinaModel(new BallerinaModel.DefaultPackage("tibco", "sample", "0.1"),
+                            List.of(tmpModule));
+            SyntaxTree st = new CodeGenerator(ballerinaModel).generateBalCode();
+            String actual = st.toSourceCode();
+            String expected = Files.readString(Path.of(resourceDir + textDocument.documentName()));
+            Assert.assertEquals(actual, expected);
+        }
+    }
+
+    private static TibcoModel.Process parse(Path path) {
+        Element root;
+        try {
+            root = parseXmlFile(path.toString());
+            assert root != null;
+        } catch (Exception e) {
+            throw new RuntimeException("Error while parsing the XML file: " + path, e);
+        }
+        return XmlToTibcoModelConverter.parseProcess(root);
     }
 
     @Test(groups = {"tibco", "converter"}, dataProvider = "testCaseProvider")

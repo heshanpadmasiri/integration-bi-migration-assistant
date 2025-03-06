@@ -29,7 +29,7 @@ import tibco.TibcoModel;
 
 class ActivityContext {
 
-    public final ProcessContext processContext;
+    public final ProjectContext.ProcessContext processContext;
     private final TibcoModel.Scope.Flow.Activity activity;
     private int varCounter = 0;
     private final int index;
@@ -39,10 +39,10 @@ class ActivityContext {
         return "var" + varCounter++;
     }
 
-    ActivityContext(ProcessContext processContext, TibcoModel.Scope.Flow.Activity activity) {
+    ActivityContext(ProjectContext.ProcessContext processContext, TibcoModel.Scope.Flow.Activity activity) {
         this.activity = activity;
         this.processContext = processContext;
-        index = processContext.acitivityCounter++;
+        index = processContext.activityCounter++;
     }
 
     BallerinaModel.Expression.VariableReference inputVariable() {
@@ -72,8 +72,7 @@ class ActivityContext {
     }
 
     public String getProcessStartFunctionName(String processName) {
-        // FIXME: this needs to call back to the conversion context and get the result
-        return ConversionUtils.sanitizes(processName) + "_start";
+        return processContext.getProcessStartFunction(processName);
     }
 
     public String functionName() {

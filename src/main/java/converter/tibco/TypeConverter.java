@@ -18,7 +18,7 @@ class TypeConverter {
     private TypeConverter() {
     }
 
-    static Collection<BallerinaModel.ModuleTypeDef> convertSchema(ProcessContext cx,
+    static Collection<BallerinaModel.ModuleTypeDef> convertSchema(ProjectContext.ProcessContext cx,
                                                                   TibcoModel.Type.Schema schema) {
         // TODO: (may be) handle namespaces
         Stream<BallerinaModel.ModuleTypeDef> newTypeDefinitions =
@@ -30,7 +30,7 @@ class TypeConverter {
         return Stream.concat(newTypeDefinitions, typeAliases).toList();
     }
 
-    private static Optional<BallerinaModel.ModuleTypeDef> convertTypeAlias(ProcessContext cx,
+    private static Optional<BallerinaModel.ModuleTypeDef> convertTypeAlias(ProjectContext.ProcessContext cx,
                                                                            TibcoModel.Type.Schema.Element element) {
         // FIXME: handle namespaces
         String name = XmlToTibcoModelConverter.getTagNameWithoutNameSpace(element.name());
@@ -39,7 +39,7 @@ class TypeConverter {
         return cx.addModuleTypeDef(name, defn) ? Optional.of(defn) : Optional.empty();
     }
 
-    private static BallerinaModel.ModuleTypeDef convertComplexType(ProcessContext cx,
+    private static BallerinaModel.ModuleTypeDef convertComplexType(ProjectContext.ProcessContext cx,
                                                                    TibcoModel.Type.Schema.ComplexType complexType) {
         BallerinaModel.TypeDesc typeDesc = switch (complexType.body()) {
             case TibcoModel.Type.Schema.ComplexType.Choice choice -> convertTypeChoice(cx, choice);
@@ -53,21 +53,21 @@ class TypeConverter {
         return typeDef;
     }
 
-    private static BallerinaModel.TypeDesc.RecordTypeDesc convertTypeInclusion(ProcessContext cx,
+    private static BallerinaModel.TypeDesc.RecordTypeDesc convertTypeInclusion(ProjectContext.ProcessContext cx,
                                                                                TibcoModel.Type.Schema.ComplexType.ComplexContent complexContent) {
         List<BallerinaModel.TypeDesc> inclusions = List.of(cx.getTypeByName(complexContent.extension().base().name()));
         RecordBody body = getRecordBody(cx, complexContent.extension().elements());
         return new BallerinaModel.TypeDesc.RecordTypeDesc(inclusions, body.fields(), body.rest());
     }
 
-    private static BallerinaModel.TypeDesc.RecordTypeDesc convertSequenceBody(ProcessContext cx,
+    private static BallerinaModel.TypeDesc.RecordTypeDesc convertSequenceBody(ProjectContext.ProcessContext cx,
                                                                               TibcoModel.Type.Schema.ComplexType.SequenceBody sequenceBody) {
         Collection<TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members = sequenceBody.elements();
         RecordBody body = getRecordBody(cx, members);
         return new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), body.fields(), body.rest());
     }
 
-    private static RecordBody getRecordBody(ProcessContext cx,
+    private static RecordBody getRecordBody(ProjectContext.ProcessContext cx,
                                             Collection<? extends TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members) {
         List<BallerinaModel.TypeDesc.RecordTypeDesc.RecordField> fields = new ArrayList<>();
         Optional<BallerinaModel.TypeDesc> rest = Optional.empty();
@@ -77,16 +77,17 @@ class TypeConverter {
                     BallerinaModel.TypeDesc typeDesc = cx.getTypeByName(element.type().name());
                     fields.add(new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField(element.name(), typeDesc));
                 }
-                case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest ignored -> {
-                    // FIXME: handle this properly
-                    rest = Optional.of(ANYDATA);
-                }
+                case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest ignored -> // FIXME: handle this properly
+                        rest = Optional.of(ANYDATA);
+                // FIXME:
+                case TibcoModel.Type.Schema.ComplexType.Choice choice ->
+                        rest = Optional.of(convertTypeChoice(cx, choice));
             }
         }
         return new RecordBody(fields, rest);
     }
 
-    static BallerinaModel.TypeDesc.UnionTypeDesc convertTypeChoice(ProcessContext cx,
+    static BallerinaModel.TypeDesc.UnionTypeDesc convertTypeChoice(ProjectContext.ProcessContext cx,
                                                                    TibcoModel.Type.Schema.ComplexType.Choice choice) {
         List<? extends BallerinaModel.TypeDesc> types = choice.elements().stream().map(element -> {
             BallerinaModel.TypeDesc typeDesc = cx.getTypeByName(element.ref().name());
@@ -108,41 +109,49 @@ class TypeConverter {
         return new BallerinaModel.TypeDesc.UnionTypeDesc(types);
     }
 
-    static BallerinaModel.Service convertWsdlDefinition(ProcessContext cx,
+    static BallerinaModel.Service convertWsdlDefinition(ProjectContext.ProcessContext cx,
                                                         TibcoModel.Type.WSDLDefinition wsdlDefinition) {
         Map<String, String> messageTypes = getMessageTypeDefinitions(cx, wsdlDefinition);
         return convertPortType(cx, messageTypes, wsdlDefinition.portType());
     }
 
-    private static Map<String, String> getMessageTypeDefinitions(ProcessContext cx,
+    private static Map<String, String> getMessageTypeDefinitions(ProjectContext.ProcessContext cx,
                                                                  TibcoModel.Type.WSDLDefinition wsdlDefinition) {
         Map<String, String> result = new HashMap<>();
         for (TibcoModel.Type.WSDLDefinition.Message message : wsdlDefinition.messages()) {
-            String referredTypeName = getMessageTypeName(cx, message);
-            result.put(message.name(), referredTypeName);
+            Optional<String> referredTypeName = getMessageTypeName(cx, message);
+            if (referredTypeName.isEmpty()) {
+                continue;
+            }
+            result.put(message.name(), referredTypeName.get());
         }
         return result;
     }
 
-    private static String getMessageTypeName(ProcessContext cx, TibcoModel.Type.WSDLDefinition.Message message) {
-        TibcoModel.Type.WSDLDefinition.Message.Part part;
+    private static Optional<String> getMessageTypeName(ProjectContext.ProcessContext cx,
+                                                       TibcoModel.Type.WSDLDefinition.Message message) {
+        Optional<TibcoModel.Type.WSDLDefinition.Message.Part> part;
         if (message.parts().size() == 1) {
-            part = message.parts().getFirst();
+            part = Optional.ofNullable(message.parts().getFirst());
         } else {
-            part = message.parts().stream().filter(each -> each.name().equals("item")).findFirst().get();
+            part = message.parts().stream().filter(each -> each.name().equals("item")).findFirst();
         }
-        switch (part) {
+        if (part.isEmpty()) {
+            return Optional.empty();
+        }
+        String typeName = switch (part.get()) {
             case TibcoModel.Type.WSDLDefinition.Message.Part.InlineError inlineError -> {
                 String constantName = inlineError.name();
-                return cx.declareConstant(constantName, inlineError.value(), inlineError.type());
+                yield cx.declareConstant(constantName, inlineError.value(), inlineError.type());
             }
             case TibcoModel.Type.WSDLDefinition.Message.Part.Reference ref -> {
-                return ref.element().value();
+                yield ref.element().value();
             }
-        }
+        };
+        return Optional.of(typeName);
     }
 
-    private static BallerinaModel.Service convertPortType(ProcessContext cx,
+    private static BallerinaModel.Service convertPortType(ProjectContext.ProcessContext cx,
                                                           Map<String, String> messageTypes,
                                                           TibcoModel.Type.WSDLDefinition.PortType portType) {
         String basePath = portType.basePath();
@@ -156,7 +165,7 @@ class TypeConverter {
         return new BallerinaModel.Service(basePath, listenerRefs, resources, List.of(), List.of(), List.of());
     }
 
-    private static BallerinaModel.Resource convertOperation(ProcessContext cx,
+    private static BallerinaModel.Resource convertOperation(ProjectContext.ProcessContext cx,
                                                             String apiPath, Map<String, String> messageTypes,
                                                             TibcoModel.Type.WSDLDefinition.PortType.Operation operation) {
         String resourceMethodName = operation.name();

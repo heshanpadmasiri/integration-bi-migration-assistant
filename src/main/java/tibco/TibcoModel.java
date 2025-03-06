@@ -113,6 +113,10 @@ public class TibcoModel {
 
             public record TibcoType(String name) {
 
+                public TibcoType {
+                    assert name != null && !name.isEmpty();
+                }
+
                 private static final HashMap<String, TibcoType> TYPES = new HashMap<>();
 
                 public static TibcoType of(String name) {
@@ -132,7 +136,7 @@ public class TibcoModel {
 
                 }
 
-                public record Choice(Collection<Element> elements) implements Body {
+                public record Choice(Collection<Element> elements) implements Body, SequenceBody.Member {
 
                     public record Element(int maxOccurs, int minOccurs, TibcoType ref) {
 
@@ -145,10 +149,16 @@ public class TibcoModel {
 
                         record Element(String name, TibcoType type) implements Member {
 
+                            public Element {
+                                assert name != null && !name.isEmpty();
+                            }
                         }
 
-                        record Rest(boolean isLax) implements Member {
+                        record Rest(boolean isLax, Optional<TibcoType> type) implements Member {
 
+                            public Rest(boolean isLax) {
+                                this(isLax, Optional.empty());
+                            }
                         }
                     }
                 }
@@ -323,8 +333,8 @@ public class TibcoModel {
                 }
 
                 record ActivityExtension(Expression expression, String inputVariable, Collection<Target> targets,
-                                         List<InputBinding> inputBindings, Config config)
-                        implements Activity, ActivityWithTargets {
+                                         Collection<Source> sources, List<InputBinding> inputBindings, Config config)
+                        implements Activity, ActivityWithTargets, ActivityWithSources {
 
                     public record Config() {
 

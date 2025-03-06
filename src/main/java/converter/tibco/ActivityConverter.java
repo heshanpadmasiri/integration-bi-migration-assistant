@@ -33,7 +33,8 @@ class ActivityConverter {
     private ActivityConverter() {
     }
 
-    public static BallerinaModel.Function convertActivity(ProcessContext cx, TibcoModel.Scope.Flow.Activity activity) {
+    public static BallerinaModel.Function convertActivity(ProjectContext.ProcessContext cx,
+                                                          TibcoModel.Scope.Flow.Activity activity) {
         return convertActivity(new ActivityContext(cx, activity), activity);
     }
 
@@ -86,17 +87,20 @@ class ActivityConverter {
 
     private static List<BallerinaModel.Statement> convertActivityExtension(ActivityContext cx,
                                                                            TibcoModel.Scope.Flow.Activity.ActivityExtension activityExtension) {
-        throw new UnsupportedOperationException("unimplemented");
+        // FIXME:
+        return List.of();
     }
 
     private static List<BallerinaModel.Statement> convertReceiveEvent(ActivityContext cx,
                                                                       TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent) {
-        throw new UnsupportedOperationException("unimplemented");
+        // FIXME:
+        return List.of();
     }
 
     private static List<BallerinaModel.Statement> convertInvoke(ActivityContext cx,
                                                                 TibcoModel.Scope.Flow.Activity.Invoke invoke) {
-        throw new UnsupportedOperationException("unimplemented");
+        // FIXME:
+        return List.of();
     }
 
     private static List<BallerinaModel.Statement> convertExtActivity(ActivityContext fx,

@@ -33,14 +33,51 @@ import tibco.TibcoModel;
 public class TibcoToBallerinaModelConverter {
 
     private TibcoToBallerinaModelConverter() {
+    }
 
+    static BallerinaModel.Module convertProcesses(List<TibcoModel.Process> processes) {
+        ProjectContext cx = new ProjectContext();
+        List<TypeConversionResult> results =
+                processes.stream().map(process -> convertTypes(cx.getProcessContext(process), process)).toList();
+        assert results.size() == processes.size();
+        List<BallerinaModel.TextDocument> textDocuments = new ArrayList<>(results.size());
+        for (int i = 0; i < results.size(); i++) {
+            TibcoModel.Process process = processes.get(i);
+            BallerinaModel.TextDocument textDocument =
+                    convertBody(cx.getProcessContext(process), process, results.get(i));
+            textDocuments.add(textDocument);
+        }
+        return cx.serialize(textDocuments);
     }
 
     static BallerinaModel.Module convertProcess(TibcoModel.Process process) {
-        return convertProcess(new ProcessContext(process), process);
+        ProjectContext cx = new ProjectContext();
+        return convertProcess(cx.getProcessContext(process), process);
     }
 
-    private static BallerinaModel.Module convertProcess(ProcessContext cx, TibcoModel.Process process) {
+    private static BallerinaModel.Module convertProcess(ProjectContext.ProcessContext cx, TibcoModel.Process process) {
+        TypeConversionResult result = convertTypes(cx, process);
+        BallerinaModel.TextDocument textDocument = convertBody(cx, process, result);
+        ProjectContext projectContext = cx.projectContext;
+        return projectContext.serialize(List.of(textDocument));
+    }
+
+    private static BallerinaModel.TextDocument convertBody(ProjectContext.ProcessContext cx,
+                                                           TibcoModel.Process process,
+                                                           TypeConversionResult result) {
+        List<BallerinaModel.Function> functions = new ArrayList<>();
+        cx.analysisResult.activities().stream()
+                .map(activity -> ActivityConverter.convertActivity(cx, activity))
+                .forEach(functions::add);
+        functions.add(generateStartFunction(cx, cx.analysisResult.startActivity(process)));
+        functions.add(generateProcessFunction(cx, process));
+        functions.sort(Comparator.comparing(BallerinaModel.Function::methodName));
+
+        return cx.serialize(result.moduleTypeDefs(), result.service(), functions);
+    }
+
+    private static TypeConversionResult convertTypes(ProjectContext.ProcessContext cx,
+                                                     TibcoModel.Process process) {
         List<BallerinaModel.ModuleTypeDef> moduleTypeDefs = new ArrayList<>();
         BallerinaModel.Service service = null;
         for (TibcoModel.Type type : process.types()) {
@@ -54,20 +91,16 @@ public class TibcoToBallerinaModelConverter {
                 }
             }
         }
-        List<BallerinaModel.Function> functions = new ArrayList<>();
-        cx.analysisResult.activities().stream()
-                .map(activity -> ActivityConverter.convertActivity(cx, activity))
-                .forEach(functions::add);
-        functions.add(generateStartFunction(cx, cx.analysisResult.startActivity(process)));
-        functions.add(generateProcessFunction(cx, process));
-        functions.sort(Comparator.comparing(BallerinaModel.Function::methodName));
-
-        var textDocument = cx.serialize(moduleTypeDefs, service, functions);
-        String name = process.name();
-        return new BallerinaModel.Module(name, List.of(textDocument));
+        return new TypeConversionResult(moduleTypeDefs, service);
     }
 
-    private static BallerinaModel.Function generateProcessFunction(ProcessContext cx, TibcoModel.Process process) {
+    private record TypeConversionResult(List<BallerinaModel.ModuleTypeDef> moduleTypeDefs,
+                                        BallerinaModel.Service service) {
+
+    }
+
+    private static BallerinaModel.Function generateProcessFunction(ProjectContext.ProcessContext cx,
+                                                                   TibcoModel.Process process) {
         String name = cx.getProcessFunction();
         AnalysisResult analysisResult = cx.analysisResult;
         TibcoModel.Scope.Flow.Activity startActivity = cx.analysisResult.startActivity(process);
@@ -91,17 +124,24 @@ public class TibcoToBallerinaModelConverter {
                 Optional.of(XML.toString()), body);
     }
 
-    private static BallerinaModel.Statement generateWorkerForStartAction(ProcessContext cx,
+    private static BallerinaModel.Statement generateWorkerForStartAction(ProjectContext.ProcessContext cx,
                                                                          TibcoModel.Scope.Flow.Activity startActivity) {
         cx.startWorkerName = "start_worker";
         return switch (startActivity) {
             case TibcoModel.Scope.Flow.Activity.Pick pick -> generateWorkerForPickStartAction(cx, pick);
+            case TibcoModel.Scope.Flow.Activity.ActivityExtension activityExtension ->
+                    generateWorkerForActivityExtensionAction(cx, activityExtension);
             default -> throw new IllegalStateException("Unexpected value: " + startActivity);
         };
     }
 
+    private static BallerinaModel.Statement generateWorkerForActivityExtensionAction(ProjectContext.ProcessContext cx,
+                                                                                     TibcoModel.Scope.Flow.Activity.ActivityExtension activityExtension) {
+        return generateWorkerForStartActionInner(cx, activityExtension);
+    }
+
     // FIXME:
-    private static BallerinaModel.Statement generateWorkerForPickStartAction(ProcessContext cx,
+    private static BallerinaModel.Statement generateWorkerForPickStartAction(ProjectContext.ProcessContext cx,
                                                                              TibcoModel.Scope.Flow.Activity.Pick pick) {
         TibcoModel.Scope.Flow.Activity.Pick.OnMessage onMessage = pick.onMessage();
         TibcoModel.Scope scope = onMessage.scope();
@@ -120,16 +160,21 @@ public class TibcoToBallerinaModelConverter {
             }
         }
         assert startActivity != null : "Failed to find start activity";
-        List<BallerinaModel.Statement> body = new ArrayList<>();
+        return generateWorkerForStartActionInner(cx, startActivity);
+    }
 
+    private static BallerinaModel.NamedWorkerDecl generateWorkerForStartActionInner(
+            ProjectContext.ProcessContext cx,
+            TibcoModel.Scope.Flow.Activity startActivity) {
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        AnalysisResult analysisResult = cx.analysisResult;
         AnalysisResult.ActivityData activityData = analysisResult.from(startActivity);
         String inputVarName = "input";
         String fn = activityData.functionName();
-        BallerinaModel.Expression.FunctionCall callExpr = new BallerinaModel.Expression.FunctionCall(fn,
-                new String[]{inputVarName});
+        BallerinaModel.Expression.FunctionCall callExpr =
+                new BallerinaModel.Expression.FunctionCall(fn, new String[]{inputVarName});
         String outputVarName = "output";
-        BallerinaModel.VarDeclStatment outputVarDecl =
-                new BallerinaModel.VarDeclStatment(XML, outputVarName, callExpr);
+        BallerinaModel.VarDeclStatment outputVarDecl = new BallerinaModel.VarDeclStatment(XML, outputVarName, callExpr);
         body.add(outputVarDecl);
 
         Collection<TibcoModel.Scope.Flow.Link> destinationLinks = analysisResult.destinations(startActivity);
@@ -143,7 +188,8 @@ public class TibcoToBallerinaModelConverter {
         return new BallerinaModel.NamedWorkerDecl(cx.startWorkerName, body);
     }
 
-    private static BallerinaModel.Statement generateLink(ProcessContext cx, TibcoModel.Scope.Flow.Link link) {
+    private static BallerinaModel.Statement generateLink(ProjectContext.ProcessContext cx,
+                                                         TibcoModel.Scope.Flow.Link link) {
         List<BallerinaModel.Statement> body = new ArrayList<>();
         List<String> inputVarNames = new ArrayList<>();
         var analysisResult = cx.analysisResult;
@@ -203,7 +249,7 @@ public class TibcoToBallerinaModelConverter {
         return new BallerinaModel.VarDeclStatment(XML, inputVarName, receiveEvent);
     }
 
-    private static BallerinaModel.Function generateStartFunction(ProcessContext cx,
+    private static BallerinaModel.Function generateStartFunction(ProjectContext.ProcessContext cx,
                                                                  TibcoModel.Scope.Flow.Activity startActivity) {
 
         List<BallerinaModel.Statement> body = new ArrayList<>();

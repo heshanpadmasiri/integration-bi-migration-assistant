@@ -245,8 +245,11 @@ public final class XmlToTibcoModelConverter {
         String language = node.getAttribute("expressionLanguage");
         if (language.contains("xslt")) {
             return parseXSLTExpression(node);
+        } else {
+//            throw new ParserException("Unsupported expression language: " + language, node);
+            // FIXME:
+            return new TibcoModel.Scope.Flow.Activity.Expression.XSLT("UNSUPPORTED");
         }
-        throw new ParserException("Unsupported expression language: " + language, node);
     }
 
     private static TibcoModel.Scope.Flow.Activity.Expression.XSLT parseXSLTExpression(Element node) {
@@ -322,17 +325,25 @@ public final class XmlToTibcoModelConverter {
     private static TibcoModel.Scope.Flow.Activity.ActivityExtension parseActivityExtension(Element activity) {
         TibcoModel.Scope.Flow.Activity.Expression expression = parseExpressionNode(activity);
         String inputVariable = activity.getAttribute("inputVariable");
+        Optional<Element> targetsElement = tryGetFirstChildWithTag(activity, "targets");
         Collection<TibcoModel.Scope.Flow.Activity.Target> targets =
-                ElementIterable.of(getFirstChildWithTag(activity, "targets")).stream()
-                        .map(XmlToTibcoModelConverter::parseTarget)
-                        .toList();
+                targetsElement.map(ElementIterable::of).map(ElementIterable::stream)
+                        .map(s -> s.map(XmlToTibcoModelConverter::parseTarget).toList())
+                        .orElse(List.of());
+
+        Optional<Element> sourcesElement = tryGetFirstChildWithTag(activity, "sources");
+        Collection<TibcoModel.Scope.Flow.Activity.Source> sources =
+                sourcesElement.map(ElementIterable::of).map(ElementIterable::stream)
+                        .map(s -> s.map(XmlToTibcoModelConverter::parseSource).toList())
+                        .orElse(List.of());
         List<TibcoModel.Scope.Flow.Activity.InputBinding> inputBindings =
                 ElementIterable.of(getFirstChildWithTag(activity, "inputBindings")).stream()
                         .map(each -> new TibcoModel.Scope.Flow.Activity.InputBinding(parseExpressionNode(each)))
                         .toList();
         TibcoModel.Scope.Flow.Activity.ActivityExtension.Config config =
                 parseActivityExtensionConfig(getFirstChildWithTag(activity, "config"));
-        return new TibcoModel.Scope.Flow.Activity.ActivityExtension(expression, inputVariable, targets, inputBindings,
+        return new TibcoModel.Scope.Flow.Activity.ActivityExtension(expression, inputVariable, targets, sources,
+                inputBindings,
                 config);
     }
 
@@ -376,20 +387,26 @@ public final class XmlToTibcoModelConverter {
 
     private static TibcoModel.Variable parseVariable(Element element) {
         String name = element.getAttribute("name");
-        boolean isInternal = getAttributeIgnoringNamespace(element, "internal").equals("true");
+        Optional<String> internal = tryGetAttributeIgnoringNamespace(element, "internal");
+        boolean isInternal = internal.map(val -> val.equals("true")).orElse(false);
         return new TibcoModel.Variable(name, isInternal);
     }
 
-    private static String getAttributeIgnoringNamespace(Element element, String attributeName) {
+    private static Optional<String> tryGetAttributeIgnoringNamespace(Element element, String attributeName) {
         var attributes = element.getAttributes();
         for (int i = 0; i < attributes.getLength(); i++) {
             var attribute = attributes.item(i);
             String nameWithoutNamespace = getTagNameWithoutNameSpace(attribute.getNodeName());
             if (nameWithoutNamespace.equals(attributeName)) {
-                return attribute.getNodeValue();
+                return Optional.of(attribute.getNodeValue());
             }
         }
-        throw new ParserException("Attribute not found: " + attributeName, element);
+        return Optional.empty();
+    }
+
+    private static String getAttributeIgnoringNamespace(Element element, String attributeName) {
+        return tryGetAttributeIgnoringNamespace(element, attributeName).orElseThrow(
+                () -> new ParserException("Attribute not found: " + attributeName, element));
     }
 
     private static Collection<TibcoModel.PartnerLink> parsePartnerLinks(Element element) {
@@ -574,14 +591,20 @@ public final class XmlToTibcoModelConverter {
                 boolean isLax = Boolean.parseBoolean(element.getAttribute("processContents"));
                 yield new TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest(isLax);
             }
+            case "choice" -> parseComplexTypeChoice(element);
             default -> throw new ParserException("Unsupported complex type element tag: " + tag, element);
         };
     }
 
-    static TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Element parseComplexTypeElement(
+    static TibcoModel.Type.Schema.ComplexType.SequenceBody.Member parseComplexTypeElement(
             Element element) {
         String elementName = element.getAttribute("name");
-        String typeName = element.getAttribute("type");
+        String typeName = element.hasAttribute("type") ? element.getAttribute("type") : element.getAttribute("ref");
+        if (elementName.isEmpty()) {
+            assert expectIntAttribute(element, "minOccurs") == 0;
+            return new TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest(false,
+                    Optional.of(TibcoModel.Type.Schema.TibcoType.of(typeName)));
+        }
         return new TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Element(elementName,
                 TibcoModel.Type.Schema.TibcoType.of(typeName));
     }
@@ -598,9 +621,9 @@ public final class XmlToTibcoModelConverter {
     }
 
     private static TibcoModel.Type.Schema.ComplexType.Choice.Element parseComplexTypeChoiceElement(Element element) {
-        String typeName = element.getAttribute("ref");
-        int minOccurs = expectIntAttribute(element, "minOccurs");
-        int maxOccurs = expectIntAttribute(element, "maxOccurs");
+        String typeName = element.hasAttribute("ref") ? element.getAttribute("ref") : element.getAttribute("type");
+        int minOccurs = element.hasAttribute("minOccurs") ? expectIntAttribute(element, "minOccurs") : 1;
+        int maxOccurs = element.hasAttribute("maxOccurs") ? expectIntAttribute(element, "maxOccurs") : 1;
         return new TibcoModel.Type.Schema.ComplexType.Choice.Element(maxOccurs, minOccurs,
                 TibcoModel.Type.Schema.TibcoType.of(typeName));
     }
@@ -749,7 +772,7 @@ public final class XmlToTibcoModelConverter {
     private static TibcoModel.Type.Schema.ComplexType.ComplexContent.Extension parseComplexContentExtension(
             Element element) {
         TibcoModel.Type.Schema.TibcoType base = TibcoModel.Type.Schema.TibcoType.of(element.getAttribute("base"));
-        Collection<TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Element> elements = new ArrayList<>();
+        Collection<TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> elements = new ArrayList<>();
         for (Element child : ElementIterable.of(element)) {
             String tag = getTagNameWithoutNameSpace(child);
             if (tag.equals("sequence")) {
@@ -759,7 +782,10 @@ public final class XmlToTibcoModelConverter {
                 throw new ParserException("Unsupported complex content extension tag: " + tag, element);
             }
         }
-        return new TibcoModel.Type.Schema.ComplexType.ComplexContent.Extension(base, elements);
+        // FIXME:
+        return new TibcoModel.Type.Schema.ComplexType.ComplexContent.Extension(base,
+                elements.stream().map(each -> (TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Element) each)
+                        .toList());
     }
 
     private static int expectIntAttribute(Element element, String attributeName) {
