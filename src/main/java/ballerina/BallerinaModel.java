@@ -54,7 +54,7 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
                 for (RecordField field : fields) {
                     sb.append(INDENT).append(field).append("\n");
                 }
-                rest.ifPresent(typeDesc -> sb.append(INDENT).append("...").append(typeDesc).append("\n"));
+                rest.ifPresent(typeDesc -> sb.append(INDENT).append(typeDesc).append("...;").append("\n"));
                 if (inclusiveRecord) {
                     sb.append("}");
                 } else {

@@ -27,7 +27,7 @@ type RequestActivityOutput record {|
     string filePath;
     outputHeadersType Headers;
     DynamicHeaders DynamicHeaders;
-...anydata
+    anydata...;
 |};
 
 type GiveNewSchemaNameHere record {
@@ -96,7 +96,7 @@ type RequestActivityInput record {|
     inputHeadersType Headers;
     DynamicHeaders DynamicHeaders;
     parametersType parameters;
-...anydata
+    anydata...;
 |};
 
 type HttpCommunicationException HttpCommunicationExceptionType;
@@ -188,12 +188,12 @@ type mimeHeadersType record {|
     string content-type;
     string content -transfer - encoding;
     string content -id;
-...anydata
+    anydata...;
 |};
 
 type mimePartType record {|
     mimeHeadersType mimeHeaders;
-...int|string
+    int|string...;
 |};
 
 type ValidationException ValidationExceptionType;
@@ -217,7 +217,7 @@ type HttpResponseExceptionType record {
 };
 
 type HeadersType record {|
-...anydata
+    anydata...;
 |};
 
 type HttpResponseException HttpResponseExceptionType;
