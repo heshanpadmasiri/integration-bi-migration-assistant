@@ -202,6 +202,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public sealed interface Expression {
 
+        record FieldAccess(Expression expression, String fieldName) implements Expression {
+
+            @Override
+            public String toString() {
+                return expression + "." + fieldName;
+            }
+        }
+
         record MappingConstructor(List<MappingField> fields) implements Expression {
 
             @Override

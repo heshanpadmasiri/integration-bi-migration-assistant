@@ -125,6 +125,33 @@ class ActivityConverter {
                 new BallerinaModel.VarDeclStatment(httpConfigType, cx.getAnnonVarName(),
                         parseCall);
         body.add(configVarDecl);
+        BallerinaModel.Expression.VariableReference configVarRef = new BallerinaModel.Expression.VariableReference(
+                configVarDecl.varName());
+
+        // FIXME: how to handle headers and parameters?
+        // FIXME: correctly set the base path
+        BallerinaModel.Expression.FieldAccess requestURI =
+                new BallerinaModel.Expression.FieldAccess(configVarRef, "RequestURI");
+        BallerinaModel.VarDeclStatment client = createHTTPClientWithBasePath(cx, requestURI);
+        body.add(client);
+
+        // FIXME: handle non-post
+        BallerinaModel.Action.RemoteMethodCallAction call =
+                new BallerinaModel.Action.RemoteMethodCallAction(
+                        new BallerinaModel.Expression.VariableReference(client.varName()), "post",
+                        List.of(new BallerinaModel.Expression.StringConstant(""),
+                                new BallerinaModel.Expression.FieldAccess(configVarRef, "PostData")));
+        BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(call);
+        BallerinaModel.VarDeclStatment responseDecl =
+                new BallerinaModel.VarDeclStatment(JSON, cx.getAnnonVarName(), checkPanic);
+        body.add(responseDecl);
+
+        String jsonToXmlFunction = cx.processContext.getJsonToXMLFunction();
+        BallerinaModel.Expression.FunctionCall jsonToXmlFunctionCall =
+                new BallerinaModel.Expression.FunctionCall(jsonToXmlFunction,
+                        new String[]{responseDecl.varName()});
+        body.add(new BallerinaModel.Return<>(jsonToXmlFunctionCall));
+
         return body;
     }
 
@@ -176,9 +203,14 @@ class ActivityConverter {
     private static BallerinaModel.VarDeclStatment createClientForBinding(ActivityContext cx,
                                                                          TibcoModel.PartnerLink.Binding binding) {
         String basePath = binding.path().basePath();
+        return createHTTPClientWithBasePath(cx, new BallerinaModel.Expression.StringConstant(basePath));
+    }
+
+    private static BallerinaModel.@NotNull VarDeclStatment createHTTPClientWithBasePath(ActivityContext cx,
+                                                                                        BallerinaModel.Expression basePath) {
         BallerinaModel.Expression.NewExpression newExpression =
                 new BallerinaModel.Expression.NewExpression(
-                        List.of(new BallerinaModel.Expression.StringConstant(basePath)));
+                        List.of(basePath));
         BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(newExpression);
         return new BallerinaModel.VarDeclStatment(cx.processContext.getTypeByName("http:Client"), cx.getAnnonVarName(),
                 checkPanic);
