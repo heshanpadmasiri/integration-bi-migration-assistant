@@ -31,7 +31,6 @@ class ActivityContext {
     public final ProjectContext.ProcessContext processContext;
     private final TibcoModel.Scope.Flow.Activity activity;
     private int varCounter = 0;
-    private String inputXMLVarName = null;
 
     String getAnnonVarName() {
         return "var" + varCounter++;
@@ -44,10 +43,6 @@ class ActivityContext {
 
     BallerinaModel.Expression.VariableReference getInputAsXml() {
         return new BallerinaModel.Expression.VariableReference("input");
-    }
-
-    public boolean isStartActivity(TibcoModel.Scope.Flow.Activity activity) {
-        return processContext.analysisResult.startActivities(processContext.process).equals(activity);
     }
 
     public ProjectContext.FunctionData getProcessStartFunctionName(String processName) {

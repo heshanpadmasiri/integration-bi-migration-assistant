@@ -92,7 +92,8 @@ class ActivityConverter {
 
     private static List<BallerinaModel.Statement> convertReceiveEvent(ActivityContext cx,
                                                                       TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent) {
-        // FIXME:
+        // This is just a no-op since, we have created the service already and connected it to the process function
+        // when handling the WSDL type definition.
         return List.of(new BallerinaModel.Return<>(cx.getInputAsXml()));
     }
 
