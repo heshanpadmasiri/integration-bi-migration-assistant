@@ -28,6 +28,7 @@ import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
 import converter.tibco.analyzer.AnalysisResult;
+import org.jetbrains.annotations.NotNull;
 import tibco.TibcoModel;
 
 class ActivityConverter {
@@ -87,13 +88,25 @@ class ActivityConverter {
     private static List<BallerinaModel.Statement> convertActivityExtension(ActivityContext cx,
                                                                            TibcoModel.Scope.Flow.Activity.ActivityExtension activityExtension) {
         // FIXME:
-        return List.of(new BallerinaModel.Return<>(cx.getInputAsXml()));
+        TibcoModel.Scope.Flow.Activity.ActivityExtension.Config config = activityExtension.config();
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        var inputBindings = convertInputBindings(cx, cx.getInputAsXml(), activityExtension.inputBindings());
+        body.addAll(inputBindings);
+        BallerinaModel.Expression.VariableReference result =
+                new BallerinaModel.Expression.VariableReference(inputBindings.getLast().varName());
+
+        body.add(new BallerinaModel.Return<>(result));
+        return body;
     }
 
     private static List<BallerinaModel.Statement> convertReceiveEvent(ActivityContext cx,
                                                                       TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent) {
         // This is just a no-op since, we have created the service already and connected it to the process function
         // when handling the WSDL type definition.
+        return createNoOp(cx);
+    }
+
+    private static @NotNull List<BallerinaModel.Statement> createNoOp(ActivityContext cx) {
         return List.of(new BallerinaModel.Return<>(cx.getInputAsXml()));
     }
 

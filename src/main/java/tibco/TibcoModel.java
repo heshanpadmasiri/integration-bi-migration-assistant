@@ -336,9 +336,53 @@ public class TibcoModel {
                                          Collection<Source> sources, List<InputBinding> inputBindings, Config config)
                         implements Activity, ActivityWithTargets, ActivityWithSources {
 
-                    public record Config() {
+                    public interface Config {
 
+                        ExtensionKind kind();
+
+                        record End() implements Config {
+
+                            @Override
+                            public ExtensionKind kind() {
+                                return ExtensionKind.END;
+                            }
+                        }
+
+                        record HTTPSend() implements Config {
+
+                            @Override
+                            public ExtensionKind kind() {
+                                return ExtensionKind.HTTP_SEND;
+                            }
+                        }
+
+                        record JSON_OPERATION(ExtensionKind kind, Type.Schema.TibcoType type) implements Config {
+
+                            public JSON_OPERATION {
+                                assert kind == ExtensionKind.JSON_PARSER || kind == ExtensionKind.JSON_RENDER;
+                                assert type != null;
+                            }
+                        }
+
+                        enum ExtensionKind {
+                            END,
+                            HTTP_SEND,
+                            JSON_RENDER,
+                            JSON_PARSER;
+
+                            public static ExtensionKind fromTypeId(String typeId) {
+                                return switch (typeId) {
+                                    case "bw.internal.end" -> END;
+                                    case "bw.http.sendHTTPRequest" -> HTTP_SEND;
+                                    case "bw.restjson.JsonRender" -> JSON_RENDER;
+                                    case "bw.restjson.JsonParser" -> JSON_PARSER;
+                                    default -> throw new IllegalArgumentException("Unknown extension kind: " + typeId);
+                                };
+                            }
+
+                        }
                     }
+
                 }
 
                 record Invoke(String inputVariable, String outputVariable, Operation operation, String partnerLink,

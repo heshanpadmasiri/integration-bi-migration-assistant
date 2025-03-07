@@ -357,7 +357,20 @@ public final class XmlToTibcoModelConverter {
 
     private static TibcoModel.Scope.Flow.Activity.ActivityExtension.Config parseActivityExtensionConfig(
             Element config) {
-        return new TibcoModel.Scope.Flow.Activity.ActivityExtension.Config();
+        Element activity = getFirstChildWithTag(config, "BWActivity");
+        String activityTypeID = activity.getAttribute("activityTypeID");
+        TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.ExtensionKind kind =
+                TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.ExtensionKind.fromTypeId(activityTypeID);
+        return switch (kind) {
+            case END -> new TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.End();
+            case HTTP_SEND -> new TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.HTTPSend();
+            case JSON_RENDER -> new TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.JSON_OPERATION(
+                    TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.ExtensionKind.JSON_RENDER,
+                    TibcoModel.Type.Schema.TibcoType.of("nil"));
+            case JSON_PARSER -> new TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.JSON_OPERATION(
+                    TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.ExtensionKind.JSON_PARSER,
+                    TibcoModel.Type.Schema.TibcoType.of("nil"));
+        };
     }
 
     private static TibcoModel.Scope.Flow.Activity.ReceiveEvent parseReceiveEvent(Element activity) {
