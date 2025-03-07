@@ -65,11 +65,19 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
                 return sb.toString();
             }
 
-            public record RecordField(String name, TypeDesc typeDesc) {
+            public record RecordField(String name, TypeDesc typeDesc, Optional<Expression> defaultValue) {
+
+                public RecordField(String name, TypeDesc typeDesc) {
+                    this(name, typeDesc, Optional.empty());
+                }
 
                 @Override
                 public String toString() {
-                    return typeDesc + " " + name + ";";
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(typeDesc).append(" ").append(name);
+                    defaultValue.ifPresent(expression -> sb.append(" = ").append(expression));
+                    sb.append(";");
+                    return sb.toString();
                 }
             }
         }
@@ -193,6 +201,22 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
     }
 
     public sealed interface Expression {
+
+        record MappingConstructor(List<MappingField> fields) implements Expression {
+
+            @Override
+            public String toString() {
+                return "{" + String.join(", ", fields.stream().map(Objects::toString).toList()) + "}";
+            }
+
+            public record MappingField(String key, Expression value) {
+
+                @Override
+                public String toString() {
+                    return key + ": " + value;
+                }
+            }
+        }
 
         record StringConstant(String value) implements Expression {
 

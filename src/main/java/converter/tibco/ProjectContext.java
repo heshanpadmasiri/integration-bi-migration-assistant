@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.STRING;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
@@ -45,6 +46,7 @@ public class ProjectContext {
     private final Set<BallerinaModel.Import> utilityFunctionImports = new HashSet<>();
     private String toXMLFunction = null;
     private String jsonToXMLFunction = null;
+    private String toHttpConfigFunction = null;
     private int nextPort = 8080;
 
     ProcessContext getProcessContext(TibcoModel.Process process) {
@@ -64,8 +66,7 @@ public class ProjectContext {
 
     String getToXmlFunction() {
         if (toXMLFunction == null) {
-            Library library = Library.XML_DATA;
-            utilityFunctionImports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
+            importLibraryIfNeeded(Library.XML_DATA);
             String functionName = "toXML";
             utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
                     List.of(new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(ANYDATA), "data")),
@@ -79,8 +80,7 @@ public class ProjectContext {
 
     private String getJsonToXMLFunction() {
         if (jsonToXMLFunction == null) {
-            Library library = Library.XML_DATA;
-            utilityFunctionImports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
+            importLibraryIfNeeded(Library.XML_DATA);
             String functionName = "fromJson";
             utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
                     List.of(new BallerinaModel.Parameter(JSON, "data")),
@@ -92,10 +92,56 @@ public class ProjectContext {
         return jsonToXMLFunction;
     }
 
+    private String getParseHttpConfigFunction() {
+        if (toHttpConfigFunction == null) {
+            BallerinaModel.TypeDesc targetType = getHttpConfigType();
+            toHttpConfigFunction = createConvertToTypeFunction(targetType);
+        }
+        return toHttpConfigFunction;
+    }
+
+    private BallerinaModel.TypeDesc.TypeReference getHttpConfigType() {
+        // type HTTPRequestConfig record {
+        //     string Method;
+        //     string RequestURI;
+        //     json PostData = "";
+        //     map<string> Headers = {};
+        //     map<string> parameters = {};
+        // };
+        String httpConfigTy = "HTTPRequestConfig";
+        if (moduleTypeDefs.containsKey(httpConfigTy)) {
+            return new BallerinaModel.TypeDesc.TypeReference(httpConfigTy);
+        }
+        BallerinaModel.ModuleTypeDef httpConfigType = new BallerinaModel.ModuleTypeDef(httpConfigTy,
+                new BallerinaModel.TypeDesc.RecordTypeDesc(
+                        List.of(),
+                        List.of(
+                                new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("Method", STRING),
+                                new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("RequestURI", STRING),
+                                // FIXME: what if the method is put
+                                new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("PostData", JSON, Optional.of(
+                                        new BallerinaModel.Expression.StringConstant(""))),
+                                new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("Headers",
+                                        new BallerinaModel.TypeDesc.MapTypeDesc(STRING), Optional.of(
+                                        new BallerinaModel.Expression.MappingConstructor(List.of()))),
+                                new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("parameters",
+                                        new BallerinaModel.TypeDesc.MapTypeDesc(STRING), Optional.of(
+                                        new BallerinaModel.Expression.MappingConstructor(List.of())))
+                        ),
+                        Optional.empty()
+                ));
+        moduleTypeDefs.put(httpConfigTy, Optional.of(httpConfigType));
+
+        return new BallerinaModel.TypeDesc.TypeReference(httpConfigTy);
+    }
+
+    private void importLibraryIfNeeded(Library library) {
+        utilityFunctionImports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
+    }
+
     private String createConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
         String functionName = "convertTo" + ConversionUtils.sanitizes(targetType.toString());
-        Library library = Library.XML_DATA;
-        utilityFunctionImports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
+        importLibraryIfNeeded(Library.XML_DATA);
         BallerinaModel.Expression.FunctionCall parseAsTypeCall =
                 new BallerinaModel.Expression.FunctionCall("xmldata:parseAsType", new String[]{"input"});
         BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(parseAsTypeCall);
@@ -288,6 +334,14 @@ public class ProjectContext {
 
         public String getJsonToXMLFunction() {
             return projectContext.getJsonToXMLFunction();
+        }
+
+        public String getParseHttpConfigFunction() {
+            return projectContext.getParseHttpConfigFunction();
+        }
+
+        public BallerinaModel.TypeDesc.TypeReference getHttpConfigType() {
+            return projectContext.getHttpConfigType();
         }
     }
 

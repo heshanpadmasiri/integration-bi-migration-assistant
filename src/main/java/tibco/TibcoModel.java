@@ -336,7 +336,7 @@ public class TibcoModel {
                                          Collection<Source> sources, List<InputBinding> inputBindings, Config config)
                         implements Activity, ActivityWithTargets, ActivityWithSources {
 
-                    public interface Config {
+                    public sealed interface Config {
 
                         ExtensionKind kind();
 

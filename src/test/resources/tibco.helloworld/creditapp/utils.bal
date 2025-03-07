@@ -20,6 +20,10 @@ function convertToSuccessSchema(xml input) returns SuccessSchema {
     return checkpanic xmldata:parseAsType(input);
 }
 
+function convertToHTTPRequestConfig(xml input) returns HTTPRequestConfig {
+    return checkpanic xmldata:parseAsType(input);
+}
+
 function convertToExperianResponseSchemaElement(xml input) returns ExperianResponseSchemaElement {
     return checkpanic xmldata:parseAsType(input);
 }

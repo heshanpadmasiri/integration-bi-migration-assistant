@@ -88,14 +88,43 @@ class ActivityConverter {
     private static List<BallerinaModel.Statement> convertActivityExtension(ActivityContext cx,
                                                                            TibcoModel.Scope.Flow.Activity.ActivityExtension activityExtension) {
         // FIXME:
-        TibcoModel.Scope.Flow.Activity.ActivityExtension.Config config = activityExtension.config();
-        List<BallerinaModel.Statement> body = new ArrayList<>();
         var inputBindings = convertInputBindings(cx, cx.getInputAsXml(), activityExtension.inputBindings());
-        body.addAll(inputBindings);
+        List<BallerinaModel.Statement> body = new ArrayList<>(inputBindings);
         BallerinaModel.Expression.VariableReference result =
                 new BallerinaModel.Expression.VariableReference(inputBindings.getLast().varName());
 
-        body.add(new BallerinaModel.Return<>(result));
+        TibcoModel.Scope.Flow.Activity.ActivityExtension.Config config = activityExtension.config();
+        List<BallerinaModel.Statement> rest = switch (config) {
+            case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.End ignored ->
+                    List.of(new BallerinaModel.Return<>(result));
+            case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.HTTPSend httpSend ->
+                    createHttpSend(cx, result, httpSend);
+            case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.JSON_OPERATION jsonOperation ->
+                    createJsonOperation(cx, result, jsonOperation);
+        };
+        body.addAll(rest);
+        return body;
+    }
+
+    private static List<BallerinaModel.Statement> createJsonOperation(ActivityContext cx,
+                                                                      BallerinaModel.Expression.VariableReference inputVar,
+                                                                      TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.JSON_OPERATION jsonOperation) {
+        // TODO: how to implement this
+        return List.of(new BallerinaModel.Return<>(inputVar));
+    }
+
+    private static List<BallerinaModel.Statement> createHttpSend(ActivityContext cx,
+                                                                 BallerinaModel.Expression.VariableReference configVar,
+                                                                 TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.HTTPSend httpSend) {
+        String parseFn = cx.getParseHttpConfigFunction();
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        BallerinaModel.TypeDesc.TypeReference httpConfigType = cx.getHttpConfigType();
+        BallerinaModel.Expression.FunctionCall parseCall =
+                new BallerinaModel.Expression.FunctionCall(parseFn, new String[]{configVar.varName()});
+        BallerinaModel.VarDeclStatment configVarDecl =
+                new BallerinaModel.VarDeclStatment(httpConfigType, cx.getAnnonVarName(),
+                        parseCall);
+        body.add(configVarDecl);
         return body;
     }
 

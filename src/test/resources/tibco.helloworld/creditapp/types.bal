@@ -101,6 +101,14 @@ type RequestActivityInput record {|
 
 type HttpCommunicationException HttpCommunicationExceptionType;
 
+type HTTPRequestConfig record {
+    string Method;
+    string RequestURI;
+    json PostData = "";
+    map<string> Headers = {};
+    map<string> parameters = {};
+};
+
 type ActivityException ActivityExceptionType;
 
 type UnsupportedEncodingException UnsupportedEncodingExceptionType;

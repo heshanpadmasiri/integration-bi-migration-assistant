@@ -60,4 +60,12 @@ class ActivityContext {
     public Optional<String> returnType() {
         return Optional.of(XML.toString());
     }
+
+    public String getParseHttpConfigFunction() {
+        return processContext.getParseHttpConfigFunction();
+    }
+
+    public BallerinaModel.TypeDesc.TypeReference getHttpConfigType() {
+        return processContext.getHttpConfigType();
+    }
 }
