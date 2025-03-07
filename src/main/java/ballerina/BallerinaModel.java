@@ -17,7 +17,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public record TextDocument(String documentName, List<Import> imports, List<ModuleTypeDef> moduleTypeDefs,
                                List<ModuleVar> moduleVars, List<Listener> listeners, List<Service> services,
+                               List<Function> functions, List<String> Comments, List<String> intrinsics) {
+
+        public TextDocument(String documentName, List<Import> imports, List<ModuleTypeDef> moduleTypeDefs,
+                            List<ModuleVar> moduleVars, List<Listener> listeners, List<Service> services,
                                List<Function> functions, List<String> Comments) {
+            this(documentName, imports, moduleTypeDefs, moduleVars, listeners, services, functions, Comments,
+                    List.of());
+        }
     }
 
     public record Import(String orgName, String moduleName, Optional<String> importPrefix) {
@@ -125,20 +132,43 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     }
 
-    public record ModuleVar(String name, String type, BallerinaExpression expr, boolean constant) {
+    // FIXME: expr must be optional
+    public record ModuleVar(String name, String type, BallerinaExpression expr, boolean isConstant,
+                            boolean isConfigurable) {
+
+        public ModuleVar {
+            assert !isConfigurable || isConstant;
+        }
 
         public ModuleVar(String name, String type, BallerinaExpression expr) {
-            this(name, type, expr, false);
+            this(name, type, expr, false, false);
+        }
+
+        public static ModuleVar constant(String name, TypeDesc typeDesc, BallerinaExpression expr) {
+            return new ModuleVar(name, typeDesc.toString(), expr, true, false);
+        }
+
+        public static ModuleVar configurable(String name, TypeDesc typeDesc, BallerinaExpression expr) {
+            return new ModuleVar(name, typeDesc.toString(), expr, true, true);
+        }
+
+        public ModuleVar(String name, TypeDesc type, BallerinaExpression expr) {
+            this(name, type.toString(), expr);
         }
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            if (constant) {
+            if (isConfigurable) {
+                sb.append("configurable ");
+            } else if (isConstant) {
                 sb.append("const ");
             }
-            sb.append(type).append(" ").append(name).append(" ").append("=").append(" ").append(expr.expr)
-                    .append(";\n");
+            sb.append(type).append(" ").append(name);
+            if (!expr.expr().isEmpty()) {
+                sb.append(" ").append("=").append(" ").append(expr.expr);
+            }
+            sb.append(";\n");
             return sb.toString();
         }
     }
@@ -171,7 +201,6 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public record Parameter(String name, String type, Optional<BallerinaExpression> defaultExpr) {
 
-        // FIXME: refactor this to accept type desc
         public Parameter(TypeDesc typeDesc, String name) {
             this(name, typeDesc.toString(), Optional.empty());
         }
@@ -254,6 +283,11 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
         record FunctionCall(String functionName, String[] args) implements Expression {
 
+            public FunctionCall(String functionName, List<Expression> args) {
+                this(functionName, args.stream().map(Objects::toString).toArray(String[]::new));
+            }
+
+            // FIXME: replace this with the list
             public FunctionCall(String functionName, Expression[] args) {
                 this(functionName, Arrays.stream(args).map(Objects::toString).toArray(String[]::new));
             }

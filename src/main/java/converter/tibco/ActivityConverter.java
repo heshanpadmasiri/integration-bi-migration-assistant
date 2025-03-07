@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.STRING;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
@@ -128,19 +129,24 @@ class ActivityConverter {
         BallerinaModel.Expression.VariableReference configVarRef = new BallerinaModel.Expression.VariableReference(
                 configVarDecl.varName());
 
-        // FIXME: how to handle headers and parameters?
-        // FIXME: correctly set the base path
-        BallerinaModel.Expression.FieldAccess requestURI =
-                new BallerinaModel.Expression.FieldAccess(configVarRef, "RequestURI");
-        BallerinaModel.VarDeclStatment client = createHTTPClientWithBasePath(cx, requestURI);
+        BallerinaModel.Expression.VariableReference configurableHost = cx.addConfigurableVariable(STRING, "host");
+        BallerinaModel.VarDeclStatment client = createHTTPClientWithBasePath(cx, configurableHost);
         body.add(client);
+
+        BallerinaModel.Expression.FunctionCall pathGetFunctionCall =
+                new BallerinaModel.Expression.FunctionCall(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG.name,
+                        List.of(configVarRef));
+        BallerinaModel.VarDeclStatment requestURI = new BallerinaModel.VarDeclStatment(STRING, cx.getAnnonVarName(),
+                pathGetFunctionCall);
+        body.add(requestURI);
 
         // FIXME: handle non-post
         BallerinaModel.Action.RemoteMethodCallAction call =
                 new BallerinaModel.Action.RemoteMethodCallAction(
-                        new BallerinaModel.Expression.VariableReference(client.varName()), "post",
-                        List.of(new BallerinaModel.Expression.StringConstant(""),
-                                new BallerinaModel.Expression.FieldAccess(configVarRef, "PostData")));
+                        new BallerinaModel.Expression.VariableReference(client.varName()),
+                        "/" + requestURI.varName() + ".post",
+                        List.of(new BallerinaModel.Expression.FieldAccess(configVarRef, "PostData"),
+                                new BallerinaModel.Expression.FieldAccess(configVarRef, "Headers")));
         BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(call);
         BallerinaModel.VarDeclStatment responseDecl =
                 new BallerinaModel.VarDeclStatment(JSON, cx.getAnnonVarName(), checkPanic);
@@ -226,7 +232,6 @@ class ActivityConverter {
             body.addAll(inputBindings);
             result = new BallerinaModel.Expression.VariableReference(inputBindings.getLast().varName());
         }
-        // FIXME: convert to type
         var startFunction = fx.getProcessStartFunctionName(extActivity.callProcess().subprocessName());
 
         String convertToTypeFunction = fx.processContext.getConvertToTypeFunction(startFunction.inputType());
@@ -234,11 +239,10 @@ class ActivityConverter {
                 new BallerinaModel.Expression.FunctionCall(convertToTypeFunction, new String[]{result.varName()});
 
         BallerinaModel.Expression.FunctionCall startFunctionCall =
-                new BallerinaModel.Expression.FunctionCall(startFunction.name(),
-                        new BallerinaModel.Expression[]{convertToTypeFunctionCall});
+                new BallerinaModel.Expression.FunctionCall(startFunction.name(), List.of(convertToTypeFunctionCall));
         BallerinaModel.Expression.FunctionCall convertToXmlCall =
                 new BallerinaModel.Expression.FunctionCall(fx.processContext.getToXmlFunction(),
-                        new BallerinaModel.Expression[]{startFunctionCall});
+                        List.of(startFunctionCall));
         body.add(new BallerinaModel.Return<>(convertToXmlCall));
         return body;
     }

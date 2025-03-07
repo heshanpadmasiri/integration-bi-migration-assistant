@@ -289,3 +289,12 @@ type UnsupportedEncodingExceptionType record {
 };
 
 type ActivityErrorData ActivityErrorDataType;
+
+function getRequestPath(HTTPRequestConfig config) returns string {
+    string base = config.RequestURI;
+    if (config.parameters.length() == 0) {
+        return base;
+    }
+    return base + "?" + "&".'join(...from string key in config.parameters.keys()
+        select key + "=" + config.parameters.get(key));
+}

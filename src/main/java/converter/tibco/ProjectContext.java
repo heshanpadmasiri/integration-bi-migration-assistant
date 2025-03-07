@@ -44,6 +44,7 @@ public class ProjectContext {
     private final Map<String, Optional<BallerinaModel.ModuleTypeDef>> moduleTypeDefs = new HashMap<>();
     private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
     private final Set<BallerinaModel.Import> utilityFunctionImports = new HashSet<>();
+    private final List<String> typeIntrinsics = new ArrayList<>();
     private String toXMLFunction = null;
     private String jsonToXMLFunction = null;
     private String toHttpConfigFunction = null;
@@ -131,6 +132,7 @@ public class ProjectContext {
                         Optional.empty()
                 ));
         moduleTypeDefs.put(httpConfigTy, Optional.of(httpConfigType));
+        typeIntrinsics.add(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG.body);
 
         return new BallerinaModel.TypeDesc.TypeReference(httpConfigTy);
     }
@@ -172,7 +174,7 @@ public class ProjectContext {
         // FIXME: handle imports
         List<BallerinaModel.Import> imports = List.of();
         return new BallerinaModel.TextDocument("types.bal", imports, typeDefs, List.of(), List.of(), List.of(),
-                List.of(), List.of());
+                List.of(), List.of(), typeIntrinsics);
     }
 
     private FunctionData getProcessStartFunction(String processName) {
@@ -241,6 +243,7 @@ public class ProjectContext {
         private final Set<BallerinaModel.Import> imports = new HashSet<>();
         private BallerinaModel.Listener defaultListner = null;
         private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
+        private final Map<String, BallerinaModel.ModuleVar> configurables = new HashMap<>();
         private final Map<BallerinaModel.TypeDesc, String> typeConversionFunction = new HashMap<>();
         public String startWorkerName;
         public final TibcoModel.Process process;
@@ -254,6 +257,16 @@ public class ProjectContext {
             this.projectContext = projectContext;
             this.process = process;
             this.analysisResult = ModelAnalyser.analyseProcess(process);
+        }
+
+        public BallerinaModel.Expression.VariableReference addConfigurableVariable(BallerinaModel.TypeDesc td,
+                                                                                   String name) {
+            var varDecl = this.configurables.computeIfAbsent(name, k -> createConfigurableVariable(td, name));
+            return new BallerinaModel.Expression.VariableReference(varDecl.name());
+        }
+
+        private static BallerinaModel.ModuleVar createConfigurableVariable(BallerinaModel.TypeDesc td, String name) {
+            return BallerinaModel.ModuleVar.configurable(name, td, new BallerinaModel.BallerinaExpression(""));
         }
 
         String getToXmlFunction() {
@@ -278,8 +291,8 @@ public class ProjectContext {
             BallerinaModel.TypeDesc td = getTypeByName(type);
             assert td == BallerinaModel.TypeDesc.BuiltinType.STRING;
             String expr = "\"" + valueRepr + "\"";
-            var prev = constants.put(name, new BallerinaModel.ModuleVar(name, td.toString(),
-                    new BallerinaModel.BallerinaExpression(expr), true));
+            var prev = constants.put(name,
+                    BallerinaModel.ModuleVar.constant(name, td, new BallerinaModel.BallerinaExpression(expr)));
             assert prev == null || prev.expr().expr().equals(expr);
             return name;
         }
@@ -305,8 +318,10 @@ public class ProjectContext {
                                               List<BallerinaModel.Function> functions) {
             String name = ConversionUtils.sanitizes(process.name()) + ".bal";
             List<BallerinaModel.Listener> listeners = defaultListner != null ? List.of(defaultListner) : List.of();
+            List<BallerinaModel.ModuleVar> moduleVars =
+                    Stream.concat(constants.values().stream(), configurables.values().stream()).toList();
             return new BallerinaModel.TextDocument(name, imports.stream().toList(), List.of(),
-                    constants.values().stream().toList(), listeners, List.of(processService),
+                    moduleVars, listeners, List.of(processService),
                     functions, List.of());
         }
 
