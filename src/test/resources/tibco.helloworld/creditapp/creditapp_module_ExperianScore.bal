@@ -1,7 +1,7 @@
 import ballerina/http;
 import ballerina/xslt;
 
-configurable string host ;
+configurable string host = ?;
 listener http:Listener creditapp_module_ExperianScore_listener = new (8082, {host: "localhost"});
 
 service / on creditapp_module_ExperianScore_listener {

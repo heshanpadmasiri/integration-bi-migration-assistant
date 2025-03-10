@@ -266,7 +266,7 @@ public class ProjectContext {
         }
 
         private static BallerinaModel.ModuleVar createConfigurableVariable(BallerinaModel.TypeDesc td, String name) {
-            return BallerinaModel.ModuleVar.configurable(name, td, new BallerinaModel.BallerinaExpression(""));
+            return BallerinaModel.ModuleVar.configurable(name, td, new BallerinaModel.BallerinaExpression("?"));
         }
 
         String getToXmlFunction() {
