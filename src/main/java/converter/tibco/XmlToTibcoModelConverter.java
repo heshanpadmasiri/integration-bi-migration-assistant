@@ -264,8 +264,20 @@ public final class XmlToTibcoModelConverter {
     }
 
     private static String unEscapeXml(String escapedXml) {
-        return escapedXml.replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&amp;", "&")
-                .replaceAll("&quot;", "\"").replaceAll("&apos;", "'");
+        // Process in specific order to avoid double processing issues
+        // First handle &amp; to avoid affecting other replacements
+        String result = escapedXml.replaceAll("&amp;", "&");
+
+        // Handle nested quotes: &quot; inside XML should become single quotes to avoid
+        // double-escaping
+        result = result.replaceAll("&quot;", "'");
+        result = result.replaceAll("&apos;", "'");
+
+        // Handle other XML entities
+        result = result.replaceAll("&lt;", "<");
+        result = result.replaceAll("&gt;", ">");
+
+        return result;
     }
 
     private static TibcoModel.Scope.Flow.Activity parseExtensionActivity(Element element) {
