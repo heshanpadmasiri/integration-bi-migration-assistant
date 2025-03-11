@@ -45,7 +45,9 @@ function extActivity(xml input, map<xml> context) returns xml {
         </tns:GiveNewSchemaNameHere>
     </xsl:template>
 </xsl:stylesheet>`, context);
-    return toXML(creditapp_module_EquifaxScore_start(convertToGiveNewSchemaNameHere(var0)));
+    xml var1 = toXML(creditapp_module_EquifaxScore_start(convertToGiveNewSchemaNameHere(var0)));
+    context["EquifaxScore"] = var1;
+    return var1;
 }
 
 function extActivity_3(xml input, map<xml> context) returns xml {
@@ -77,7 +79,9 @@ function extActivity_3(xml input, map<xml> context) returns xml {
         </tns:GiveNewSchemaNameHere>
     </xsl:template>
 </xsl:stylesheet>`, context);
-    return toXML(creditapp_module_ExperianScore_start(convertToGiveNewSchemaNameHere(var0)));
+    xml var1 = toXML(creditapp_module_ExperianScore_start(convertToGiveNewSchemaNameHere(var0)));
+    context["ExperianScore"] = var1;
+    return var1;
 }
 
 function pick(xml input, map<xml> context) returns xml {

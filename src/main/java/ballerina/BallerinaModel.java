@@ -240,6 +240,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             }
         }
 
+        record MemberAccess(Expression container, String field) implements Expression {
+
+            @Override
+            public String toString() {
+                return container + "[\"" + field + "\"]";
+            }
+        }
+
         record XMLTemplate(String body) implements Expression {
 
             @Override
@@ -366,7 +374,15 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public sealed interface Statement
             permits BallerinaStatement, CallStatement, Comment, IfElseStatement, NamedWorkerDecl, Return,
-            VarDeclStatment {
+            VarAssignStatement, VarDeclStatment {
+    }
+
+    public record VarAssignStatement(Expression ref, Expression value) implements Statement {
+
+        @Override
+        public String toString() {
+            return ref + " = " + value + ";";
+        }
     }
 
     public record VarDeclStatment(TypeDesc type, String varName, Expression expr) implements Statement {

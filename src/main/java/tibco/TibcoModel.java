@@ -332,8 +332,9 @@ public class TibcoModel {
                     }
                 }
 
-                record ActivityExtension(Expression expression, String inputVariable, Collection<Target> targets,
-                                         Collection<Source> sources, List<InputBinding> inputBindings, Config config)
+                record ActivityExtension(Expression expression, String inputVariable, Optional<String> outputVariable,
+                                         Collection<Target> targets, Collection<Source> sources,
+                                         List<InputBinding> inputBindings, Config config)
                         implements Activity, ActivityWithTargets, ActivityWithSources {
 
                     public sealed interface Config {

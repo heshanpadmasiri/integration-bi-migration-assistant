@@ -31,12 +31,14 @@ function activityExtension_10(xml input, map<xml> context) returns xml {
         </tns:InputElement>
     </xsl:template>
 </xsl:stylesheet>`, context);
+    context["RenderJSON"] = var0;
     return var0;
 }
 
 function activityExtension_11(xml input, map<xml> context) returns xml {
     xml var0 = checkpanic xslt:transform(input, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns5="activity.jsonParser.input+a3fa07a6-0270-48b7-ba84-7de6924acb3d+ActivityInputType" version="2.0"><xsl:param name="SendHTTPRequest"/><xsl:template name="ParseJSON-input" match="/"><tns5:ActivityInputClass><jsonString><xsl:value-of select="$SendHTTPRequest/asciiContent"/></jsonString></tns5:ActivityInputClass></xsl:template></xsl:stylesheet>`, context);
+    context["ParseJSON"] = var0;
     return var0;
 }
 
@@ -53,7 +55,9 @@ function activityExtension_9(xml input, map<xml> context) returns xml {
     http:Client var2 = checkpanic new (host);
     string var3 = getRequestPath(var1);
     json var4 = checkpanic var2->/var3.post(var1.PostData, var1.Headers);
-    return fromJson(var4);
+    xml var5 = fromJson(var4);
+    context["SendHTTPRequest"] = var5;
+    return var5;
 }
 
 function creditapp_module_ExperianScore_start(GiveNewSchemaNameHere input) returns ExperianResponseSchemaElement {

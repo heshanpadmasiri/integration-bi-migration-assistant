@@ -5,21 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-import static ballerina.BallerinaModel.BallerinaStatement;
-import static ballerina.BallerinaModel.ElseIfClause;
-import static ballerina.BallerinaModel.Function;
-import static ballerina.BallerinaModel.IfElseStatement;
-import static ballerina.BallerinaModel.Import;
-import static ballerina.BallerinaModel.Listener;
-import static ballerina.BallerinaModel.Module;
-import static ballerina.BallerinaModel.ModuleTypeDef;
-import static ballerina.BallerinaModel.ModuleVar;
-import static ballerina.BallerinaModel.Parameter;
-import static ballerina.BallerinaModel.Resource;
-import static ballerina.BallerinaModel.Service;
-import static ballerina.BallerinaModel.Statement;
-import static ballerina.BallerinaModel.TextDocument;
-
 import io.ballerina.compiler.syntax.tree.FunctionBodyBlockNode;
 import io.ballerina.compiler.syntax.tree.FunctionDefinitionNode;
 import io.ballerina.compiler.syntax.tree.ImportDeclarationNode;
@@ -37,6 +22,21 @@ import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.tools.text.TextDocuments;
 import org.ballerinalang.formatter.core.Formatter;
 import org.ballerinalang.formatter.core.FormatterException;
+
+import static ballerina.BallerinaModel.BallerinaStatement;
+import static ballerina.BallerinaModel.ElseIfClause;
+import static ballerina.BallerinaModel.Function;
+import static ballerina.BallerinaModel.IfElseStatement;
+import static ballerina.BallerinaModel.Import;
+import static ballerina.BallerinaModel.Listener;
+import static ballerina.BallerinaModel.Module;
+import static ballerina.BallerinaModel.ModuleTypeDef;
+import static ballerina.BallerinaModel.ModuleVar;
+import static ballerina.BallerinaModel.Parameter;
+import static ballerina.BallerinaModel.Resource;
+import static ballerina.BallerinaModel.Service;
+import static ballerina.BallerinaModel.Statement;
+import static ballerina.BallerinaModel.TextDocument;
 
 public class CodeGenerator {
     private final BallerinaModel ballerinaModel;
@@ -246,6 +246,7 @@ public class CodeGenerator {
             case BallerinaModel.CallStatement ignored -> stmt.toString();
             case BallerinaModel.VarDeclStatment ignored -> stmt.toString();
             case BallerinaModel.NamedWorkerDecl ignored -> stmt.toString();
+            case BallerinaModel.VarAssignStatement ignored -> stmt.toString();
             case null -> throw new IllegalStateException();
         };
     }

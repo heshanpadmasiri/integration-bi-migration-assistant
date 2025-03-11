@@ -43,6 +43,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
 import tibco.TibcoModel;
 
 public final class XmlToTibcoModelConverter {
@@ -337,6 +338,7 @@ public final class XmlToTibcoModelConverter {
     private static TibcoModel.Scope.Flow.Activity.ActivityExtension parseActivityExtension(Element activity) {
         TibcoModel.Scope.Flow.Activity.Expression expression = parseExpressionNode(activity);
         String inputVariable = activity.getAttribute("inputVariable");
+        var outputVariable = tryGetAttributeIgnoringNamespace(activity, "outputVariable");
         Optional<Element> targetsElement = tryGetFirstChildWithTag(activity, "targets");
         Collection<TibcoModel.Scope.Flow.Activity.Target> targets =
                 targetsElement.map(ElementIterable::of).map(ElementIterable::stream)
@@ -354,9 +356,9 @@ public final class XmlToTibcoModelConverter {
                         .toList();
         TibcoModel.Scope.Flow.Activity.ActivityExtension.Config config =
                 parseActivityExtensionConfig(getFirstChildWithTag(activity, "config"));
-        return new TibcoModel.Scope.Flow.Activity.ActivityExtension(expression, inputVariable, targets, sources,
-                inputBindings,
-                config);
+        return new TibcoModel.Scope.Flow.Activity.ActivityExtension(expression, inputVariable, outputVariable, targets,
+                sources,
+                inputBindings, config);
     }
 
     private static Collection<TibcoModel.Scope.Flow.Activity.Target> parseTargets(Element each) {
