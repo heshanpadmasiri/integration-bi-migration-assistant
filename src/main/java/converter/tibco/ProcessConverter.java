@@ -372,6 +372,9 @@ public class ProcessConverter {
         Collection<TibcoModel.Scope.Flow.Activity> startActivity = cx.analysisResult.startActivities(process);
         List<BallerinaModel.Statement> body = new ArrayList<>();
         body.add(cx.initContextVar());
+        body.add(new BallerinaModel.VarAssignStatement(
+                new BallerinaModel.Expression.MemberAccess(cx.contextVarRef(), "post.item"),
+                new BallerinaModel.Expression.VariableReference("input")));
         body.add(generateWorkerForStartActions(cx, startActivity));
         analysisResult.links().stream().sorted(Comparator.comparing(link -> analysisResult.from(link).workerName()))
                 .map(link -> generateLink(cx, link)).forEach(body::add);

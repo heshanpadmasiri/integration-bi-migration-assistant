@@ -90,6 +90,7 @@ function pick(xml input, map<xml> context) returns xml {
 
 function process_creditapp_module_MainProcess(xml input) returns xml {
     map<xml> context = {};
+    context["post.item"] = input;
     worker start_worker {
         xml result0 = extActivity(input, context);
         result0 -> FICOScoreTopostOut;

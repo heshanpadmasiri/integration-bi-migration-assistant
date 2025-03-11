@@ -69,6 +69,7 @@ function creditapp_module_ExperianScore_start(GiveNewSchemaNameHere input) retur
 
 function process_creditapp_module_ExperianScore(xml input) returns xml {
     map<xml> context = {};
+    context["post.item"] = input;
     worker start_worker {
         xml result0 = receiveEvent_7(input, context);
         result0 -> StartToSendHTTPRequest;

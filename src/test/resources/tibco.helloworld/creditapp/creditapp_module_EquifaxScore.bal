@@ -54,6 +54,7 @@ function invoke(xml input, map<xml> context) returns xml {
 
 function process_creditapp_module_EquifaxScore(xml input) returns xml {
     map<xml> context = {};
+    context["post.item"] = input;
     worker start_worker {
         xml result0 = receiveEvent(input, context);
         result0 -> StartTopost;

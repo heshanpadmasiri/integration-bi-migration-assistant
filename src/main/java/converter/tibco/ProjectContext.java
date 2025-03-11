@@ -241,6 +241,7 @@ public class ProjectContext {
     static class ProcessContext {
 
         private final Set<BallerinaModel.Import> imports = new HashSet<>();
+        final String CONTEXT_VAR_NAME = "context";
         private BallerinaModel.Listener defaultListner = null;
         private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
         private final Map<String, BallerinaModel.ModuleVar> configurables = new HashMap<>();
@@ -374,6 +375,10 @@ public class ProjectContext {
 
         public BallerinaModel.TypeDesc.TypeReference getHttpConfigType() {
             return projectContext.getHttpConfigType();
+        }
+
+        public BallerinaModel.Expression contextVarRef() {
+            return new BallerinaModel.Expression.VariableReference(CONTEXT_VAR_NAME);
         }
     }
 
