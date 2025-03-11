@@ -33,7 +33,7 @@ function activityExtension(xml input, map<xml> context) returns xml {
             </xsl:if>
         </tns3:SuccessSchema>
     </xsl:template>
-</xsl:stylesheet>`);
+</xsl:stylesheet>`, context);
     return var0;
 }
 

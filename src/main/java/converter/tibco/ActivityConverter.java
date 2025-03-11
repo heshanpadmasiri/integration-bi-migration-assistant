@@ -23,13 +23,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.jetbrains.annotations.NotNull;
+
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.STRING;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
 import converter.tibco.analyzer.AnalysisResult;
-import org.jetbrains.annotations.NotNull;
 import tibco.TibcoModel;
 
 class ActivityConverter {
@@ -267,7 +268,8 @@ class ActivityConverter {
                                                                 TibcoModel.Scope.Flow.Activity.Expression.XSLT xslt) {
         cx.processContext.addLibraryImport(Library.XSLT);
         BallerinaModel.Expression.FunctionCall callExpr = new BallerinaModel.Expression.FunctionCall("xslt:transform",
-                new String[]{inputVariable.varName(), "xml`" + xslt.expression() + "`"});
+                new BallerinaModel.Expression[]{inputVariable, new BallerinaModel.Expression.XMLTemplate(
+                        xslt.expression()), cx.contextVarRef()});
         BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(callExpr);
         return new BallerinaModel.VarDeclStatment(XML, cx.getAnnonVarName(), checkPanic);
     }

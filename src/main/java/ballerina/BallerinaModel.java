@@ -240,6 +240,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             }
         }
 
+        record XMLTemplate(String body) implements Expression {
+
+            @Override
+            public String toString() {
+                return "xml`" + body() + "`";
+            }
+        }
+
         record MappingConstructor(List<MappingField> fields) implements Expression {
 
             @Override

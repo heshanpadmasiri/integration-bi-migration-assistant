@@ -30,6 +30,8 @@ class ActivityContext {
 
     public final ProjectContext.ProcessContext processContext;
     private final TibcoModel.Scope.Flow.Activity activity;
+    private final String INPUT_VAR_NAME = "input";
+    private final String CONTEXT_VAR_NAME = "context";
     private int varCounter = 0;
 
     String getAnnonVarName() {
@@ -42,7 +44,7 @@ class ActivityContext {
     }
 
     BallerinaModel.Expression.VariableReference getInputAsXml() {
-        return new BallerinaModel.Expression.VariableReference("input");
+        return new BallerinaModel.Expression.VariableReference(INPUT_VAR_NAME);
     }
 
     public ProjectContext.FunctionData getProcessStartFunctionName(String processName) {
@@ -54,8 +56,8 @@ class ActivityContext {
     }
 
     public List<BallerinaModel.Parameter> parameters() {
-        return List.of(new BallerinaModel.Parameter(XML, "input"),
-                new BallerinaModel.Parameter(processContext.contextType(), "context"));
+        return List.of(new BallerinaModel.Parameter(XML, INPUT_VAR_NAME),
+                new BallerinaModel.Parameter(processContext.contextType(), CONTEXT_VAR_NAME));
     }
 
     public Optional<String> returnType() {
@@ -73,5 +75,9 @@ class ActivityContext {
     public BallerinaModel.Expression.VariableReference addConfigurableVariable(
             BallerinaModel.TypeDesc td, String name) {
         return processContext.addConfigurableVariable(td, name);
+    }
+
+    public BallerinaModel.Expression contextVarRef() {
+        return new BallerinaModel.Expression.VariableReference(CONTEXT_VAR_NAME);
     }
 }
