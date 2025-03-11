@@ -10,7 +10,7 @@ service /y54cuadtcxtfstqs3rux2gfdaxppoqgc on creditapp_module_EquifaxScore_liste
     }
 }
 
-function activityExtension(xml input) returns xml {
+function activityExtension(xml input, map<xml> context) returns xml {
     xml var0 = checkpanic xslt:transform(input, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns3="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
     <xsl:param name="post.item"/>
@@ -44,15 +44,16 @@ function creditapp_module_EquifaxScore_start(GiveNewSchemaNameHere input) return
     return result;
 }
 
-function invoke(xml input) returns xml {
+function invoke(xml input, map<xml> context) returns xml {
     http:Client var0 = checkpanic new ("/");
     json var1 = checkpanic var0->post("/creditscore", input);
     return fromJson(var1);
 }
 
 function process_creditapp_module_EquifaxScore(xml input) returns xml {
+    map<xml> context = {};
     worker start_worker {
-        xml result0 = receiveEvent(input);
+        xml result0 = receiveEvent(input, context);
         result0 -> StartTopost;
     }
     worker StartTopost {
@@ -66,13 +67,13 @@ function process_creditapp_module_EquifaxScore(xml input) returns xml {
     worker activityExtension_worker {
         xml input0 = <- postToEnd;
         xml combinedInput = input0;
-        xml output = activityExtension(combinedInput);
+        xml output = activityExtension(combinedInput, context);
         output -> function;
     }
     worker invoke_worker {
         xml input0 = <- StartTopost;
         xml combinedInput = input0;
-        xml output = invoke(combinedInput);
+        xml output = invoke(combinedInput, context);
         output -> postToEnd;
     }
     xml result0 = <- activityExtension_worker;
@@ -80,6 +81,6 @@ function process_creditapp_module_EquifaxScore(xml input) returns xml {
     return result;
 }
 
-function receiveEvent(xml input) returns xml {
+function receiveEvent(xml input, map<xml> context) returns xml {
     return input;
 }

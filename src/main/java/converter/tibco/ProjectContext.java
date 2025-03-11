@@ -252,11 +252,28 @@ public class ProjectContext {
 
         public final ProjectContext projectContext;
         public final AnalysisResult analysisResult;
+        private BallerinaModel.Expression.VariableReference contextRef;
 
         private ProcessContext(ProjectContext projectContext, TibcoModel.Process process) {
             this.projectContext = projectContext;
             this.process = process;
             this.analysisResult = ModelAnalyser.analyseProcess(process);
+        }
+
+        public BallerinaModel.TypeDesc contextType() {
+            return new BallerinaModel.TypeDesc.MapTypeDesc(XML);
+        }
+
+        public BallerinaModel.VarDeclStatment initContextVar() {
+            BallerinaModel.VarDeclStatment varDeclStatment = new BallerinaModel.VarDeclStatment(
+                    contextType(), "context", new BallerinaModel.BallerinaExpression("{}"));
+            this.contextRef = new BallerinaModel.Expression.VariableReference(varDeclStatment.varName());
+            return varDeclStatment;
+        }
+
+        public BallerinaModel.Expression.VariableReference getContextRef() {
+            assert contextRef != null;
+            return contextRef;
         }
 
         public BallerinaModel.Expression.VariableReference addConfigurableVariable(BallerinaModel.TypeDesc td,

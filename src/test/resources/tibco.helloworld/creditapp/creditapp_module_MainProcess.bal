@@ -16,7 +16,7 @@ function creditapp_module_MainProcess_start(GiveNewSchemaNameHere input) returns
     return result;
 }
 
-function extActivity(xml input) returns xml {
+function extActivity(xml input, map<xml> context) returns xml {
     xml var0 = checkpanic xslt:transform(input, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
     <xsl:param name="post.item"/>
@@ -48,7 +48,7 @@ function extActivity(xml input) returns xml {
     return toXML(creditapp_module_EquifaxScore_start(convertToGiveNewSchemaNameHere(var0)));
 }
 
-function extActivity_3(xml input) returns xml {
+function extActivity_3(xml input, map<xml> context) returns xml {
     xml var0 = checkpanic xslt:transform(input, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns3="http://xmlns.example.com/Creditscore/parameters" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" version="2.0">
     <xsl:param name="post.item"/>
@@ -80,15 +80,16 @@ function extActivity_3(xml input) returns xml {
     return toXML(creditapp_module_ExperianScore_start(convertToGiveNewSchemaNameHere(var0)));
 }
 
-function pick(xml input) returns xml {
+function pick(xml input, map<xml> context) returns xml {
     return input;
 }
 
 function process_creditapp_module_MainProcess(xml input) returns xml {
+    map<xml> context = {};
     worker start_worker {
-        xml result0 = extActivity(input);
+        xml result0 = extActivity(input, context);
         result0 -> FICOScoreTopostOut;
-        xml result1 = extActivity_3(input);
+        xml result1 = extActivity_3(input, context);
         result1 -> ExperianScoreTopostOut;
     }
     worker ExperianScoreTopostOut {
@@ -103,7 +104,7 @@ function process_creditapp_module_MainProcess(xml input) returns xml {
         xml input0 = <- FICOScoreTopostOut;
         xml input1 = <- ExperianScoreTopostOut;
         xml combinedInput = input0 + input1;
-        xml output = reply(combinedInput);
+        xml output = reply(combinedInput, context);
         output -> function;
     }
     xml result0 = <- reply_worker;
@@ -111,7 +112,7 @@ function process_creditapp_module_MainProcess(xml input) returns xml {
     return result;
 }
 
-function reply(xml input) returns xml {
+function reply(xml input, map<xml> context) returns xml {
     xml var0 = checkpanic xslt:transform(input, xml `<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns1="http://xmlns.example.com/20180827160122PLT" xmlns:tns="/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema" xmlns:tns2="http://tns.tibco.com/bw/json/1535671685533" version="2.0">
     <xsl:param name="EquifaxScore"/>

@@ -193,10 +193,6 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
                            Optional<String> returnType,
                            List<Statement> body) {
 
-        public static Function publicFunction(String name, List<Parameter> parameters, Optional<String> returnType,
-                                              List<Statement> body) {
-            return new Function(Optional.of("public"), name, parameters, returnType, body);
-        }
     }
 
     public record Parameter(String name, String type, Optional<BallerinaExpression> defaultExpr) {
@@ -214,7 +210,12 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
         }
     }
 
-    public record BallerinaExpression(String expr) {
+    public record BallerinaExpression(String expr) implements Expression {
+
+        @Override
+        public String toString() {
+            return expr;
+        }
     }
 
     public record IfElseStatement(BallerinaExpression ifCondition, List<Statement> ifBody,

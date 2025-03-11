@@ -26,11 +26,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jetbrains.annotations.NotNull;
+
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 import ballerina.BallerinaModel;
 import converter.tibco.analyzer.AnalysisResult;
-import org.jetbrains.annotations.NotNull;
 import tibco.TibcoModel;
 
 public class TibcoToBallerinaModelConverter {
@@ -143,9 +144,8 @@ public class TibcoToBallerinaModelConverter {
                 new BallerinaModel.Expression.VariableReference(inputVar));
         body.add(inputVarDecl);
 
-        String activityFunction = analysisResult.from(activity).functionName();
-        BallerinaModel.Expression.FunctionCall callExpr =
-                new BallerinaModel.Expression.FunctionCall(activityFunction, new String[]{combinedInput});
+        BallerinaModel.Expression.FunctionCall callExpr = genereateActivityFunctionCall(cx, activity,
+                new BallerinaModel.Expression.VariableReference(inputVarDecl.varName()));
         String outputVarName = "output";
         BallerinaModel.VarDeclStatment outputVarDecl = new BallerinaModel.VarDeclStatment(XML, outputVarName, callExpr);
         body.add(outputVarDecl);
@@ -161,6 +161,15 @@ public class TibcoToBallerinaModelConverter {
         }
         String workerName = analysisResult.from(activity).workerName();
         return Optional.of(new BallerinaModel.NamedWorkerDecl(workerName, body));
+    }
+
+    private static BallerinaModel.Expression.FunctionCall genereateActivityFunctionCall(
+            ProjectContext.ProcessContext cx, TibcoModel.Scope.Flow.Activity activity,
+            BallerinaModel.Expression.VariableReference inputVar) {
+        AnalysisResult analysisResult = cx.analysisResult;
+        String activityFunction = analysisResult.from(activity).functionName();
+        return new BallerinaModel.Expression.FunctionCall(activityFunction,
+                new BallerinaModel.Expression[]{inputVar, cx.getContextRef()});
     }
 
     private static BallerinaModel.Statement generateWorkerForStartActions(ProjectContext.ProcessContext cx,
@@ -180,10 +189,9 @@ public class TibcoToBallerinaModelConverter {
                                                            int index, List<BallerinaModel.Statement> body) {
         String result = "result" + index;
         AnalysisResult analysisResult = cx.analysisResult;
-        AnalysisResult.ActivityData activityData = analysisResult.from(startActivity);
-        String fn = activityData.functionName();
         BallerinaModel.Expression.FunctionCall callExpr =
-                new BallerinaModel.Expression.FunctionCall(fn, new String[]{"input"});
+                genereateActivityFunctionCall(cx, startActivity,
+                        new BallerinaModel.Expression.VariableReference("input"));
         BallerinaModel.VarDeclStatment outputVarDecl =
                 new BallerinaModel.VarDeclStatment(XML, result, callExpr);
         body.add(outputVarDecl);
@@ -228,23 +236,6 @@ public class TibcoToBallerinaModelConverter {
                     new BallerinaModel.Expression.VariableReference(inputVarName), activityWorker);
             // FIXME:
             body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
-//            String fn = activityData.functionName();
-//            BallerinaModel.Expression.FunctionCall callExpr =
-//                    new BallerinaModel.Expression.FunctionCall(fn, new String[]{inputVarName});
-//            String outputVarName = "output" + outPutCount++;
-//            BallerinaModel.VarDeclStatment outputVarDecl =
-//                    new BallerinaModel.VarDeclStatment(XML, outputVarName, callExpr);
-//            body.add(outputVarDecl);
-//            Collection<TibcoModel.Scope.Flow.Link> destinationLinks = analysisResult.destinations(destinations);
-//            if (destinationLinks.isEmpty()) {
-//                cx.terminateWorkers.add(linkData.workerName());
-//                BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
-//                        new BallerinaModel.Expression.VariableReference(outputVarName), "function");
-//                body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
-//            }
-//            for (TibcoModel.Scope.Flow.Link destinationLink : destinationLinks) {
-//                body.add(generateSendToWorker(cx, destinationLink, outputVarName));
-//            }
         }
         return new BallerinaModel.NamedWorkerDecl(linkData.workerName(), body);
     }
@@ -380,6 +371,7 @@ public class TibcoToBallerinaModelConverter {
         AnalysisResult analysisResult = cx.analysisResult;
         Collection<TibcoModel.Scope.Flow.Activity> startActivity = cx.analysisResult.startActivities(process);
         List<BallerinaModel.Statement> body = new ArrayList<>();
+        body.add(cx.initContextVar());
         body.add(generateWorkerForStartActions(cx, startActivity));
         analysisResult.links().stream().sorted(Comparator.comparing(link -> analysisResult.from(link).workerName()))
                 .map(link -> generateLink(cx, link)).forEach(body::add);
@@ -397,22 +389,5 @@ public class TibcoToBallerinaModelConverter {
     static class PredefinedTypes {
 
         private static final BallerinaModel.TypeDesc.BuiltinType ANYDATA = BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
-    }
-
-    record LinkHandler(String name, BallerinaModel.TypeDesc inputType, Collection<String> registeredListeners) {
-
-        public void registerListener(String listener) {
-            registeredListeners.add(listener);
-        }
-
-        public BallerinaModel.Function toFunction() {
-            List<BallerinaModel.Statement> body = registeredListeners.stream()
-                    .map(listener -> new BallerinaModel.Expression.FunctionCall(listener, new String[]{"input"}))
-                    .map(BallerinaModel.CallStatement::new).map(each -> (BallerinaModel.Statement) each).toList();
-
-            return new BallerinaModel.Function(Optional.empty(), name,
-                    List.of(new BallerinaModel.Parameter("input", inputType.toString(), Optional.empty())),
-                    Optional.empty(), body);
-        }
     }
 }

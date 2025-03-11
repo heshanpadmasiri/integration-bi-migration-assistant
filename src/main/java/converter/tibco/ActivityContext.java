@@ -54,7 +54,8 @@ class ActivityContext {
     }
 
     public List<BallerinaModel.Parameter> parameters() {
-        return List.of(new BallerinaModel.Parameter(XML, "input"));
+        return List.of(new BallerinaModel.Parameter(XML, "input"),
+                new BallerinaModel.Parameter(processContext.contextType(), "context"));
     }
 
     public Optional<String> returnType() {
