@@ -24,12 +24,13 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import ballerina.BallerinaModel;
-import ballerina.CodeGenerator;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+
+import ballerina.BallerinaModel;
+import ballerina.CodeGenerator;
 import tibco.TibcoModel;
 
 
@@ -48,7 +49,7 @@ public class TibcoToBalConverter {
         }
         TibcoModel.Process process = XmlToTibcoModelConverter.parseProcess(root);
         BallerinaModel.Module ballerinaModule =
-                TibcoToBallerinaModelConverter.convertProcess(process);
+                ProcessConverter.convertProcess(process);
         BallerinaModel ballerinaModel = new BallerinaModel(new BallerinaModel.DefaultPackage("tibco", "sample", "0.1"),
                 List.of(ballerinaModule));
         return new CodeGenerator(ballerinaModel).generateBalCode();

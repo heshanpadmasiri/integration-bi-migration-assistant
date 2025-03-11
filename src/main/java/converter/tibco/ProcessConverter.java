@@ -34,9 +34,9 @@ import ballerina.BallerinaModel;
 import converter.tibco.analyzer.AnalysisResult;
 import tibco.TibcoModel;
 
-public class TibcoToBallerinaModelConverter {
+public class ProcessConverter {
 
-    private TibcoToBallerinaModelConverter() {
+    private ProcessConverter() {
     }
 
     static BallerinaModel.Module convertProcesses(List<TibcoModel.Process> processes) {

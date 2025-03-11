@@ -24,15 +24,16 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static converter.tibco.TibcoToBalConverter.parseXmlFile;
-
-import ballerina.BallerinaModel;
-import ballerina.CodeGenerator;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Element;
+
+import static converter.tibco.TibcoToBalConverter.parseXmlFile;
+
+import ballerina.BallerinaModel;
+import ballerina.CodeGenerator;
 import tibco.TibcoModel;
 
 public class ConversionTest {
@@ -47,7 +48,7 @@ public class ConversionTest {
         try {
             var element = parseXmlFile(path.toString());
             var process = XmlToTibcoModelConverter.parseProcess(element);
-            var module = TibcoToBallerinaModelConverter.convertProcess(process);
+            var module = ProcessConverter.convertProcess(process);
             // TODO: figure out how to validate the module
             if (kind == TestUtils.TestKind.ERROR) {
                 throw new AssertionError("Parsing succeeded for an invalid input: " + path);
@@ -66,7 +67,7 @@ public class ConversionTest {
                 Stream.of("MainProcess.bwp", "EquifaxScore.bwp", "ExperianScore.bwp").map(each -> resourceDir + each)
                         .map(Path::of)
                         .map(ConversionTest::parse).toList();
-        BallerinaModel.Module module = TibcoToBallerinaModelConverter.convertProcesses(processes);
+        BallerinaModel.Module module = ProcessConverter.convertProcesses(processes);
         for (BallerinaModel.TextDocument textDocument : module.textDocuments()) {
             BallerinaModel.Module tmpModule = new BallerinaModel.Module(module.name(), List.of(textDocument));
             BallerinaModel ballerinaModel =
