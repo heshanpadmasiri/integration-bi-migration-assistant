@@ -31,7 +31,7 @@ public class TibcoModel {
     public record Process(String name, Collection<Type> types, ProcessInfo processInfo,
                           Optional<ProcessInterface> processInterface,
                           Optional<ProcessTemplateConfigurations> processTemplateConfigurations,
-                          Collection<PartnerLink> partnerLinks, Collection<Variable> variables, Scope scope) {
+                          Collection<PartnerLink> partnerLinks, Collection<Variable> variables, Optional<Scope> scope) {
 
         public Process {
             assert name != null;
@@ -58,7 +58,7 @@ public class TibcoModel {
 
         record WSDLDefinition(Map<String, String> namespaces, PartnerLinkType partnerLinkType,
                               Collection<NameSpace> imports, Collection<Message> messages,
-                              PortType portType) implements Type {
+                              Collection<PortType> portType) implements Type {
 
             public record PartnerLinkType(String name, Role role) {
 

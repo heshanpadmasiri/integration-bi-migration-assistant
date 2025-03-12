@@ -113,7 +113,7 @@ public final class XmlToTibcoModelConverter {
             }
         }
         return new TibcoModel.Process(name, types, processInfo, processInterface, processTemplateConfigurations,
-                partnerLinks, variables, scope);
+                partnerLinks, variables, Optional.ofNullable(scope));
     }
 
     // TODO: fill this
@@ -677,8 +677,7 @@ public final class XmlToTibcoModelConverter {
             }
         }
         assert partnerLinkType != null;
-        assert portTypes.size() == 1;
-        return new TibcoModel.Type.WSDLDefinition(namespaces, partnerLinkType, imports, messages, portTypes.getFirst());
+        return new TibcoModel.Type.WSDLDefinition(namespaces, partnerLinkType, imports, messages, portTypes);
     }
 
     private static TibcoModel.Type.WSDLDefinition.PortType parsePortType(Element element) {

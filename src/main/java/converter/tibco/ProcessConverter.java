@@ -72,8 +72,11 @@ public class ProcessConverter {
         List<BallerinaModel.Function> functions = cx.analysisResult.activities().stream()
                 .map(activity -> ActivityConverter.convertActivity(cx, activity))
                 .collect(Collectors.toCollection(ArrayList::new));
-        functions.add(generateStartFunction(cx));
-        functions.add(generateProcessFunction(cx, process));
+        if (process.scope().isPresent()) {
+            functions.add(generateStartFunction(cx));
+            functions.add(generateProcessFunction(cx, process));
+        }
+
         functions.sort(Comparator.comparing(BallerinaModel.Function::methodName));
 
         return cx.serialize(result.service(), functions);
@@ -81,23 +84,20 @@ public class ProcessConverter {
 
     private static TypeConversionResult convertTypes(ProjectContext.ProcessContext cx, TibcoModel.Process process) {
         List<BallerinaModel.ModuleTypeDef> moduleTypeDefs = new ArrayList<>();
-        BallerinaModel.Service service = null;
+        List<BallerinaModel.Service> services = new ArrayList<>();
         for (TibcoModel.Type type : process.types()) {
             switch (type) {
                 case TibcoModel.Type.Schema schema -> moduleTypeDefs.addAll(TypeConverter.convertSchema(cx, schema));
                 case TibcoModel.Type.WSDLDefinition wsdlDefinition -> {
-                    if (service != null) {
-                        throw new IllegalStateException("Multiple services not supported");
-                    }
-                    service = TypeConverter.convertWsdlDefinition(cx, wsdlDefinition);
+                    services.addAll(TypeConverter.convertWsdlDefinition(cx, wsdlDefinition));
                 }
             }
         }
-        return new TypeConversionResult(moduleTypeDefs, service);
+        return new TypeConversionResult(moduleTypeDefs, services);
     }
 
-    private record TypeConversionResult(List<BallerinaModel.ModuleTypeDef> moduleTypeDefs,
-                                        BallerinaModel.Service service) {
+    private record TypeConversionResult(Collection<BallerinaModel.ModuleTypeDef> moduleTypeDefs,
+                                        Collection<BallerinaModel.Service> service) {
 
     }
 
@@ -258,6 +258,8 @@ public class ProcessConverter {
         List<BallerinaModel.Statement> body = new ArrayList<>();
         BallerinaModel.TypeDesc inputType = cx.processInputType;
         BallerinaModel.TypeDesc returnType = cx.processReturnType;
+        assert inputType != null;
+        assert returnType != null;
 
         String inputVariable = "input";
         BallerinaModel.Expression.FunctionCall toXMLCall =

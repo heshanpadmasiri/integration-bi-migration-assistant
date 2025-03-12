@@ -332,15 +332,14 @@ public class ProjectContext {
         }
 
         // FIXME: don't get the typeDefs
-        BallerinaModel.TextDocument serialize(BallerinaModel.Service processService,
+        BallerinaModel.TextDocument serialize(Collection<BallerinaModel.Service> processServices,
                                               List<BallerinaModel.Function> functions) {
             String name = ConversionUtils.sanitizes(process.name()) + ".bal";
             List<BallerinaModel.Listener> listeners = defaultListner != null ? List.of(defaultListner) : List.of();
             List<BallerinaModel.ModuleVar> moduleVars =
                     Stream.concat(constants.values().stream(), configurables.values().stream()).toList();
             return new BallerinaModel.TextDocument(name, imports.stream().toList(), List.of(),
-                    moduleVars, listeners, List.of(processService),
-                    functions, List.of());
+                    moduleVars, listeners, processServices.stream().toList(), functions, List.of());
         }
 
         public FunctionData getProcessStartFunction() {

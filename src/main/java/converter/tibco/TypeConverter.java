@@ -112,10 +112,10 @@ class TypeConverter {
         return new BallerinaModel.TypeDesc.UnionTypeDesc(types);
     }
 
-    static BallerinaModel.Service convertWsdlDefinition(ProjectContext.ProcessContext cx,
+    static Collection<BallerinaModel.Service> convertWsdlDefinition(ProjectContext.ProcessContext cx,
                                                         TibcoModel.Type.WSDLDefinition wsdlDefinition) {
         Map<String, String> messageTypes = getMessageTypeDefinitions(cx, wsdlDefinition);
-        return convertPortType(cx, messageTypes, wsdlDefinition.portType());
+        return wsdlDefinition.portType().stream().map(portType -> convertPortType(cx, messageTypes, portType)).toList();
     }
 
     private static Map<String, String> getMessageTypeDefinitions(ProjectContext.ProcessContext cx,

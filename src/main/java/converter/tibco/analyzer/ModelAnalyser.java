@@ -54,7 +54,7 @@ public class ModelAnalyser {
     }
 
     private static void analyseProcess(ProcessAnalysisContext cx, TibcoModel.Process process) {
-        analyseScope(cx, process.scope());
+        process.scope().ifPresent(s -> analyseScope(cx, s));
         analysePartnerLinks(cx, process.partnerLinks());
     }
 
