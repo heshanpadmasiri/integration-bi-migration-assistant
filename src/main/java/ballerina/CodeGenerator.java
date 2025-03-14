@@ -1,6 +1,12 @@
 package ballerina;
 
 import converter.ConversionUtils;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+
 import io.ballerina.compiler.syntax.tree.FunctionBodyBlockNode;
 import io.ballerina.compiler.syntax.tree.FunctionDefinitionNode;
 import io.ballerina.compiler.syntax.tree.ImportDeclarationNode;
@@ -18,11 +24,6 @@ import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.tools.text.TextDocuments;
 import org.ballerinalang.formatter.core.Formatter;
 import org.ballerinalang.formatter.core.FormatterException;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
 
 import static ballerina.BallerinaModel.BallerinaStatement;
 import static ballerina.BallerinaModel.DoStatement;
@@ -70,8 +71,7 @@ public class CodeGenerator {
             }
 
             for (ModuleVar moduleVar : textDocument.moduleVars()) {
-                ModuleMemberDeclarationNode member = NodeParser.parseModuleMemberDeclaration(
-                        String.format("%s %s = %s;", moduleVar.type(), moduleVar.name(), moduleVar.expr().expr()));
+                ModuleMemberDeclarationNode member = NodeParser.parseModuleMemberDeclaration(moduleVar.toString());
                 moduleMembers.add(member);
             }
 
@@ -128,6 +128,11 @@ public class CodeGenerator {
                 moduleMembers.add(fd);
             }
 
+            for (String f : textDocument.intrinsics()) {
+                FunctionDefinitionNode fd = (FunctionDefinitionNode) NodeParser.parseModuleMemberDeclaration(f);
+                moduleMembers.add(fd);
+            }
+
             NodeList<ImportDeclarationNode> importDecls = NodeFactory.createNodeList(imports);
             NodeList<ModuleMemberDeclarationNode> moduleMemberDecls = NodeFactory.createNodeList(moduleMembers);
 
@@ -158,8 +163,8 @@ public class CodeGenerator {
         ModulePartNode modulePartNode = NodeFactory.createModulePartNode(
                 importDecls,
                 moduleMemberDecls,
-                NodeFactory.createToken(SyntaxKind.EOF_TOKEN, eofLeadingMinutiae, NodeFactory.createEmptyMinutiaeList())
-        );
+                NodeFactory.createToken(SyntaxKind.EOF_TOKEN, eofLeadingMinutiae,
+                        NodeFactory.createEmptyMinutiaeList()));
 
         SyntaxTree syntaxTree = SyntaxTree.from(TextDocuments.from(""));
         syntaxTree = syntaxTree.modifyWith(modulePartNode);
@@ -176,7 +181,7 @@ public class CodeGenerator {
     }
 
     private String getReturnTypeDescriptor(Optional<String> returnType) {
-        return returnType.map(r ->  String.format("returns %s", r)).orElse("");
+        return returnType.map(r -> String.format("returns %s", r)).orElse("");
     }
 
     private String getVisibilityQualifier(Optional<String> visibilityQualifier) {
@@ -202,9 +207,12 @@ public class CodeGenerator {
                     .toList());
         }
 
-        return String.join(",", parameters.stream().map(p -> p.defaultExpr().isPresent() ?
-                String.format("%s %s = %s", p.type(), p.name(), p.defaultExpr().get().expr()) :
-                String.format("%s %s", p.type(), p.name())).toList());
+        return String.join(",",
+                parameters.stream()
+                        .map(p -> p.defaultExpr().isPresent()
+                                ? String.format("%s %s = %s", p.type(), p.name(), p.defaultExpr().get().expr())
+                                : String.format("%s %s", p.type(), p.name()))
+                        .toList());
     }
 
     private FunctionBodyBlockNode constructFunctionBodyBlock(List<Statement> body) {
@@ -219,36 +227,39 @@ public class CodeGenerator {
     }
 
     private static String constructBallerinaStatements(Statement stmt) {
-        if (stmt instanceof BallerinaStatement balStmt) {
-            return balStmt.stmt();
-        } else if (stmt instanceof DoStatement doStatement) {
-            // TODO: check for optional on-fail
-            return String.format("do { %s } on fail { %s }",
+        return switch (stmt) {
+            case BallerinaStatement balStmt -> balStmt.stmt();
+            case DoStatement doStatement -> String.format("do { %s } on fail { %s }",
                     String.join("", doStatement.doBody().stream()
                             .map(CodeGenerator::constructBallerinaStatements).toList()),
                     String.join("", doStatement.onFailClause().get().onFailBody().stream()
                             .map(CodeGenerator::constructBallerinaStatements).toList()));
-        } else if (stmt instanceof IfElseStatement ifElseStmt) {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (ElseIfClause elseIfClause : ifElseStmt.elseIfClauses()) {
-                stringBuilder.append(
-                        String.format("else if(%s) { %s }",
-                                elseIfClause.condition().expr(),
-                                String.join("", elseIfClause.elseIfBody().stream()
-                                        .map(CodeGenerator::constructBallerinaStatements).toList())
-                        ));
-            }
+            case IfElseStatement ifElseStmt -> {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (ElseIfClause elseIfClause : ifElseStmt.elseIfClauses()) {
+                    stringBuilder.append(
+                            String.format("else if(%s) { %s }",
+                                    elseIfClause.condition().expr(),
+                                    String.join("", elseIfClause.elseIfBody().stream()
+                                            .map(CodeGenerator::constructBallerinaStatements).toList())));
+                }
 
-            return String.format("if (%s) { %s } %s else { %s }",
-                    ifElseStmt.ifCondition().expr(),
-                    String.join("", ifElseStmt.ifBody().stream()
-                            .map(CodeGenerator::constructBallerinaStatements).toList()),
-                    stringBuilder,
-                    String.join("", ifElseStmt.elseBody().stream()
-                            .map(CodeGenerator::constructBallerinaStatements).toList()));
-        } else {
-            throw new IllegalStateException();
-        }
+                yield String.format("if (%s) { %s } %s else { %s }",
+                        ifElseStmt.ifCondition().expr(),
+                        String.join("", ifElseStmt.ifBody().stream()
+                                .map(CodeGenerator::constructBallerinaStatements).toList()),
+                        stringBuilder,
+                        String.join("", ifElseStmt.elseBody().stream()
+                                .map(CodeGenerator::constructBallerinaStatements).toList()));
+            }
+            case BallerinaModel.Return<?> ignored -> stmt.toString();
+            case BallerinaModel.Comment ignored -> stmt.toString();
+            case BallerinaModel.CallStatement ignored -> stmt.toString();
+            case BallerinaModel.VarDeclStatment ignored -> stmt.toString();
+            case BallerinaModel.NamedWorkerDecl ignored -> stmt.toString();
+            case BallerinaModel.VarAssignStatement ignored -> stmt.toString();
+            case null -> throw new IllegalStateException();
+        };
     }
 
     private static String constructImportDeclaration(Import importDeclaration) {
