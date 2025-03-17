@@ -3,6 +3,8 @@ package converter;
 import ballerina.BallerinaModel;
 import ballerina.CodeGenerator;
 import converter.tibco.TibcoToBalConverter;
+import io.ballerina.cli.cmd.NewCommand;
+import io.ballerina.compiler.syntax.tree.SyntaxTree;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -14,9 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import io.ballerina.cli.cmd.NewCommand;
-import io.ballerina.compiler.syntax.tree.SyntaxTree;
 
 import static converter.MuleToBalConverter.convertToBallerina;
 
@@ -44,7 +43,8 @@ public class MigrationTool {
     private static void migrateTibco(String[] args) {
         if (args.length < 2) {
             logger.severe(
-                    "Usage: java -jar mule_to_bal_converter.jar --tibco <path to bwp file or project> [-o <output path>]");
+                    "Usage: java -jar mule_to_bal_converter.jar --tibco <path to bwp file or project> " +
+                            "[-o <output path>]");
             System.exit(1);
         }
         Path inputPath = Paths.get(args[1]);

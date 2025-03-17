@@ -20,6 +20,7 @@ package converter.tibco;
 
 import ballerina.BallerinaModel;
 import converter.tibco.analyzer.AnalysisResult;
+import org.jetbrains.annotations.NotNull;
 import tibco.TibcoModel;
 
 import java.util.ArrayList;
@@ -29,8 +30,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.jetbrains.annotations.NotNull;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
@@ -132,7 +131,7 @@ public class ProcessConverter {
             stmts.add(inputVarDecl);
         }
 
-        // FIXME: correctly combine
+        // TODO: correctly combine
         String resultVar = String.join(" + ", resultVars);
         String resultVarName = "result";
         BallerinaModel.VarDeclStatment inputVarDecl = new BallerinaModel.VarDeclStatment(XML, resultVarName,
@@ -155,7 +154,7 @@ public class ProcessConverter {
             String inputVarName = "input" + inputVars.size();
             addReceiveFromPeerStatement(analysisResult.from(source).workerName(), inputVarName, body, inputVars);
         }
-        // FIXME: concat
+        // TODO: concat
         String inputVar = String.join(" + ", inputVars);
         String combinedInput = "combinedInput";
         BallerinaModel.VarDeclStatment inputVarDecl = new BallerinaModel.VarDeclStatment(XML, combinedInput,
@@ -174,7 +173,6 @@ public class ProcessConverter {
         if (destinations.isEmpty()) {
             BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
                     new BallerinaModel.Expression.VariableReference(outputVarName), "function");
-            // FIXME:
             body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
         }
         String workerName = analysisResult.from(activity).workerName();
@@ -190,8 +188,10 @@ public class ProcessConverter {
                 new BallerinaModel.Expression[]{inputVar, cx.getContextRef()});
     }
 
-    private static BallerinaModel.Statement generateWorkerForStartActions(ProcessContext cx,
-                                                                          Collection<TibcoModel.Scope.Flow.Activity> startActivities) {
+    private static BallerinaModel.Statement generateWorkerForStartActions(
+            ProcessContext cx,
+            Collection<TibcoModel.Scope.Flow.Activity> startActivities
+    ) {
         cx.startWorkerName = "start_worker";
         List<BallerinaModel.Statement> body = new ArrayList<>();
         int index = 0;
@@ -220,14 +220,14 @@ public class ProcessConverter {
         }
     }
 
-    private static BallerinaModel.@NotNull BallerinaStatement generateSendToWorker(ProcessContext cx,
-                                                                                   TibcoModel.Scope.Flow.Link destinationLink,
-                                                                                   String variable) {
+    private static BallerinaModel.@NotNull BallerinaStatement generateSendToWorker(
+            ProcessContext cx,
+            TibcoModel.Scope.Flow.Link destinationLink,
+            String variable) {
         AnalysisResult analysisResult = cx.analysisResult;
         AnalysisResult.LinkData linkData = analysisResult.from(destinationLink);
         BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
                 new BallerinaModel.Expression.VariableReference(variable), linkData.workerName());
-        // FIXME:
         return new BallerinaModel.BallerinaStatement(sendAction + ";");
     }
 
@@ -252,7 +252,6 @@ public class ProcessConverter {
             String activityWorker = activityData.workerName();
             BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
                     new BallerinaModel.Expression.VariableReference(inputVarName), activityWorker);
-            // FIXME:
             body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
         }
         return new BallerinaModel.NamedWorkerDecl(linkData.workerName(), body);
@@ -322,22 +321,28 @@ public class ProcessConverter {
         return typeDef;
     }
 
-    private static BallerinaModel.TypeDesc.RecordTypeDesc convertTypeInclusion(ProcessContext cx,
-                                                                               TibcoModel.Type.Schema.ComplexType.ComplexContent complexContent) {
+    private static BallerinaModel.TypeDesc.RecordTypeDesc convertTypeInclusion(
+            ProcessContext cx,
+            TibcoModel.Type.Schema.ComplexType.ComplexContent complexContent
+    ) {
         List<BallerinaModel.TypeDesc> inclusions = List.of(cx.getTypeByName(complexContent.extension().base().name()));
         RecordBody body = getRecordBody(cx, complexContent.extension().elements());
         return new BallerinaModel.TypeDesc.RecordTypeDesc(inclusions, body.fields(), body.rest());
     }
 
-    private static BallerinaModel.TypeDesc.RecordTypeDesc convertSequenceBody(ProcessContext cx,
-                                                                              TibcoModel.Type.Schema.ComplexType.SequenceBody sequenceBody) {
+    private static BallerinaModel.TypeDesc.RecordTypeDesc convertSequenceBody(
+            ProcessContext cx,
+            TibcoModel.Type.Schema.ComplexType.SequenceBody sequenceBody
+    ) {
         Collection<TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members = sequenceBody.elements();
         RecordBody body = getRecordBody(cx, members);
         return new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), body.fields(), body.rest());
     }
 
-    private static RecordBody getRecordBody(ProcessContext cx,
-                                            Collection<? extends TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members) {
+    private static RecordBody getRecordBody(
+            ProcessContext cx,
+            Collection<? extends TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members
+    ) {
         List<BallerinaModel.TypeDesc.RecordTypeDesc.RecordField> fields = new ArrayList<>();
         Optional<BallerinaModel.TypeDesc> rest = Optional.empty();
         for (TibcoModel.Type.Schema.ComplexType.SequenceBody.Member member : members) {
@@ -347,7 +352,7 @@ public class ProcessConverter {
                     fields.add(new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField(element.name(), typeDesc));
                 }
                 case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest ignored -> {
-                    // FIXME: handle this properly
+                    // TODO: handle this properly
                     rest = Optional.of(PredefinedTypes.ANYDATA);
                 }
                 case TibcoModel.Type.Schema.ComplexType.Choice choice -> {

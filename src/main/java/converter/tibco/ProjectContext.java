@@ -59,7 +59,6 @@ public class ProjectContext {
     }
 
     public BallerinaModel.Module serialize(Collection<BallerinaModel.TextDocument> textDocuments) {
-        // FIXME: also do utils
         List<BallerinaModel.TextDocument> combinedTextDocuments = Stream.concat(textDocuments.stream(),
                 Stream.of(typesFile(), utilsFile())).toList();
         return new BallerinaModel.Module("tibco", combinedTextDocuments);
@@ -119,7 +118,7 @@ public class ProjectContext {
                         List.of(
                                 new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("Method", STRING),
                                 new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("RequestURI", STRING),
-                                // FIXME: what if the method is put
+                                // TODO: handle put
                                 new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("PostData", JSON, Optional.of(
                                         new BallerinaModel.Expression.StringConstant(""))),
                                 new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("Headers",
@@ -230,7 +229,7 @@ public class ProjectContext {
             case "anydata" -> Optional.of(BallerinaModel.TypeDesc.BuiltinType.ANYDATA);
             case "xml" -> Optional.of(XML);
             case "null" -> Optional.of(NIL);
-            // FIXME:
+            // TODO: handle base64Binary
             case "base64Binary" -> Optional.of(BallerinaModel.TypeDesc.BuiltinType.INT);
             default -> Optional.empty();
         };

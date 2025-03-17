@@ -36,8 +36,8 @@ import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 public class ProcessContext implements ContextWithFile {
 
+    static final String CONTEXT_VAR_NAME = "context";
     private final Set<BallerinaModel.Import> imports = new HashSet<>();
-    final String CONTEXT_VAR_NAME = "context";
     private BallerinaModel.Listener defaultListner = null;
     private final Map<String, BallerinaModel.ModuleVar> constants = new HashMap<>();
     private final Map<String, BallerinaModel.ModuleVar> configurables = new HashMap<>();
@@ -127,7 +127,6 @@ public class ProcessContext implements ContextWithFile {
 
     }
 
-    // FIXME: don't get the typeDefs
     BallerinaModel.TextDocument serialize(Collection<BallerinaModel.Service> processServices,
                                           List<BallerinaModel.Function> functions) {
         String name = ConversionUtils.sanitizes(process.name()) + ".bal";
@@ -148,7 +147,6 @@ public class ProcessContext implements ContextWithFile {
     }
 
     public String getConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
-        // FIXME: create a utility function
         return typeConversionFunction.computeIfAbsent(targetType, this::createConvertToTypeFunction);
     }
 
