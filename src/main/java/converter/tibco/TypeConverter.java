@@ -27,7 +27,21 @@ class TypeConverter {
         Stream<BallerinaModel.ModuleTypeDef> typeAliases =
                 schema.elements().stream().map(element -> convertTypeAlias(cx, element))
                         .filter(Optional::isPresent).map(Optional::get);
-        return Stream.concat(newTypeDefinitions, typeAliases).toList();
+        Stream<BallerinaModel.ModuleTypeDef> unhandledTypes = schema.unhandledTypes().stream()
+                .map(ty -> convertUnhandledTypes(cx, ty));
+        return Stream.of(newTypeDefinitions, typeAliases, unhandledTypes)
+                .flatMap(s -> s).toList();
+    }
+
+    private static BallerinaModel.ModuleTypeDef convertUnhandledTypes(
+            ContextWithFile cx, TibcoModel.Type.Schema.UnhandledType unhandledType) {
+        cx.getProjectContext().incrementUnhandledTypeCount();
+        List<BallerinaModel.Comment> comments = List.of(
+                new BallerinaModel.Comment("FIXME: Failed to convert type due to " + unhandledType.reason()),
+                new BallerinaModel.Comment(unhandledType.elementAsString()));
+        var defn = new BallerinaModel.ModuleTypeDef(unhandledType.name(), ANYDATA, comments);
+        cx.addModuleTypeDef(unhandledType.name(), defn);
+        return defn;
     }
 
     private static Optional<BallerinaModel.ModuleTypeDef> convertTypeAlias(ContextWithFile cx,
@@ -35,6 +49,7 @@ class TypeConverter {
         String name = XmlToTibcoModelConverter.getTagNameWithoutNameSpace(element.name());
         BallerinaModel.TypeDesc ref = cx.getTypeByName(element.type().name());
         BallerinaModel.ModuleTypeDef defn = new BallerinaModel.ModuleTypeDef(name, ref);
+        cx.getProjectContext().incrementTypeAliasCount();
         return cx.addModuleTypeDef(name, defn) ? Optional.of(defn) : Optional.empty();
     }
 
@@ -49,6 +64,7 @@ class TypeConverter {
         String name = complexType.name();
         BallerinaModel.ModuleTypeDef typeDef = new BallerinaModel.ModuleTypeDef(name, typeDesc);
         cx.addModuleTypeDef(name, typeDef);
+        cx.getProjectContext().incrementTypeCount();
         return typeDef;
     }
 
@@ -91,8 +107,10 @@ class TypeConverter {
         return new RecordBody(fields, rest);
     }
 
-    static BallerinaModel.TypeDesc.UnionTypeDesc convertTypeChoice(ContextWithFile cx,
-                                                                   TibcoModel.Type.Schema.ComplexType.Choice choice) {
+    private static BallerinaModel.TypeDesc.UnionTypeDesc convertTypeChoice(
+            ContextWithFile cx,
+            TibcoModel.Type.Schema.ComplexType.Choice choice
+    ) {
         List<? extends BallerinaModel.TypeDesc> types = choice.elements().stream().map(element -> {
             BallerinaModel.TypeDesc typeDesc = cx.getTypeByName(element.ref().name());
             assert element.maxOccurs() == 1;

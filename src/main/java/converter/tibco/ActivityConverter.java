@@ -52,8 +52,18 @@ class ActivityConverter {
             case TibcoModel.Scope.Flow.Activity.Pick pick -> convertPickAction(cx, pick);
             case TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent -> convertReceiveEvent(cx, receiveEvent);
             case TibcoModel.Scope.Flow.Activity.Reply reply -> convertReply(cx, reply);
+                case TibcoModel.Scope.Flow.Activity.UnhandledActivity unhandledActivity ->
+                        convertUnhandledActivity(cx, unhandledActivity);
         };
         return new BallerinaModel.Function(Optional.empty(), cx.functionName(), cx.parameters(), cx.returnType(), body);
+    }
+
+    private static List<BallerinaModel.Statement> convertUnhandledActivity(
+                    ActivityContext cx,
+                    TibcoModel.Scope.Flow.Activity.UnhandledActivity unhandledActivity) {
+            // TODO: implement this
+        BallerinaModel.Expression.VariableReference inputXml = cx.getInputAsXml();
+        return List.of(new BallerinaModel.Comment(unhandledActivity.reason()), new BallerinaModel.Return<>(inputXml));
     }
 
     private static List<BallerinaModel.Statement> convertReply(ActivityContext cx,

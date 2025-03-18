@@ -65,7 +65,7 @@ public class CodeGenerator {
 
             for (ModuleTypeDef moduleTypeDef : textDocument.moduleTypeDefs()) {
                 TypeDefinitionNode typeDefinitionNode = (TypeDefinitionNode) NodeParser.parseModuleMemberDeclaration(
-                        String.format("type %s %s;", moduleTypeDef.name(), moduleTypeDef.typeDesc()));
+                        moduleTypeDef.toString());
                 moduleMembers.add(typeDefinitionNode);
             }
 
