@@ -52,8 +52,8 @@ class ActivityConverter {
             case TibcoModel.Scope.Flow.Activity.Pick pick -> convertPickAction(cx, pick);
             case TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent -> convertReceiveEvent(cx, receiveEvent);
             case TibcoModel.Scope.Flow.Activity.Reply reply -> convertReply(cx, reply);
-                case TibcoModel.Scope.Flow.Activity.UnhandledActivity unhandledActivity ->
-                        convertUnhandledActivity(cx, unhandledActivity);
+            case TibcoModel.Scope.Flow.Activity.UnhandledActivity unhandledActivity ->
+                    convertUnhandledActivity(cx, unhandledActivity);
         };
         return new BallerinaModel.Function(Optional.empty(), cx.functionName(), cx.parameters(), cx.returnType(), body);
     }
