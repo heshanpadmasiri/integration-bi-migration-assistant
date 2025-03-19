@@ -56,7 +56,7 @@ class ActivityContext {
 
     public List<BallerinaModel.Parameter> parameters() {
         return List.of(new BallerinaModel.Parameter(XML, INPUT_VAR_NAME),
-                new BallerinaModel.Parameter(processContext.contextType(), processContext.CONTEXT_VAR_NAME));
+                new BallerinaModel.Parameter(processContext.contextType(), ProcessContext.CONTEXT_VAR_NAME));
     }
 
     public Optional<String> returnType() {
@@ -78,5 +78,13 @@ class ActivityContext {
 
     public BallerinaModel.Expression contextVarRef() {
         return processContext.contextVarRef();
+    }
+
+    public BallerinaModel.Expression.VariableReference dbClient(String sharedResourcePropertyName) {
+        return processContext.dbClient(sharedResourcePropertyName);
+    }
+
+    public String getConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
+        return processContext.getConvertToTypeFunction(targetType);
     }
 }

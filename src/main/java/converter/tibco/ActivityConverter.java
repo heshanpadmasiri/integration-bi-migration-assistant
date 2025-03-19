@@ -59,9 +59,8 @@ class ActivityConverter {
     }
 
     private static List<BallerinaModel.Statement> convertUnhandledActivity(
-                    ActivityContext cx,
-                    TibcoModel.Scope.Flow.Activity.UnhandledActivity unhandledActivity) {
-            // TODO: implement this
+            ActivityContext cx,
+            TibcoModel.Scope.Flow.Activity.UnhandledActivity unhandledActivity) {
         BallerinaModel.Expression.VariableReference inputXml = cx.getInputAsXml();
         return List.of(new BallerinaModel.Comment(unhandledActivity.reason()), new BallerinaModel.Return<>(inputXml));
     }
@@ -111,8 +110,41 @@ class ActivityConverter {
                     createHttpSend(cx, result, httpSend, activityExtension.outputVariable());
             case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.JsonOperation jsonOperation ->
                     createJsonOperation(cx, result, jsonOperation, activityExtension.outputVariable());
+            case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.SQL sql -> createSQLOperation(cx, result, sql);
         };
         body.addAll(rest);
+        return body;
+    }
+
+    private static List<BallerinaModel.Statement> createSQLOperation(
+            ActivityContext cx,
+            BallerinaModel.Expression.VariableReference inputVar,
+            TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.SQL sql
+    ) {
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        BallerinaModel.TypeDesc dataType = ConversionUtils.createQueryInputType(cx, sql);
+        BallerinaModel.VarDeclStatment dataDecl = new BallerinaModel.VarDeclStatment(dataType, "data",
+                new BallerinaModel.Expression.FunctionCall(cx.getConvertToTypeFunction(dataType), List.of(inputVar)));
+        body.add(dataDecl);
+        BallerinaModel.Expression.VariableReference paramData = new BallerinaModel.Expression.VariableReference(
+                dataDecl.varName());
+
+        BallerinaModel.VarDeclStatment queryDecl = ConversionUtils.createQueryDecl(cx, paramData, sql);
+        body.add(queryDecl);
+        BallerinaModel.Expression.VariableReference query = new BallerinaModel.Expression.VariableReference(
+                queryDecl.varName());
+
+        BallerinaModel.Expression.VariableReference dbClient = cx.dbClient(sql.sharedResourcePropertyName());
+        BallerinaModel.TypeDesc executionResultType = cx.processContext.getTypeByName("sql:ExecutionResult");
+        BallerinaModel.VarDeclStatment result =
+                new BallerinaModel.VarDeclStatment(executionResultType, cx.getAnnonVarName(),
+                        new BallerinaModel.Expression.CheckPanic(
+                                new BallerinaModel.Action.RemoteMethodCallAction(
+                                        dbClient, "execute", List.of(query))));
+        body.add(result);
+
+        // TODO: handle things like select properly
+        body.add(new BallerinaModel.Return<>(inputVar));
         return body;
     }
 

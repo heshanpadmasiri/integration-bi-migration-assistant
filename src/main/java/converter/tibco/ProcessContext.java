@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -91,7 +92,9 @@ public class ProcessContext implements ContextWithFile {
         return this.projectContext.getToXmlFunction();
     }
 
+    // TODO: getting name here is redundant
     public boolean addModuleTypeDef(String name, BallerinaModel.ModuleTypeDef moduleTypeDef) {
+        assert Objects.equals(name, moduleTypeDef.name());
         return this.projectContext.addModuleTypeDef(name, moduleTypeDef);
     }
 
@@ -111,7 +114,6 @@ public class ProcessContext implements ContextWithFile {
         String expr = "\"" + valueRepr + "\"";
         var prev = constants.put(name,
                 BallerinaModel.ModuleVar.constant(name, td, new BallerinaModel.BallerinaExpression(expr)));
-        assert prev == null || prev.expr().expr().equals(expr);
         return name;
     }
 
@@ -121,7 +123,7 @@ public class ProcessContext implements ContextWithFile {
     }
 
     public void addLibraryImport(Library library) {
-        imports.add(new BallerinaModel.Import("ballerina", library.value, Optional.empty()));
+        imports.add(new BallerinaModel.Import(library.orgName, library.moduleName, Optional.empty()));
     }
 
     String getDefaultHttpListenerRef() {
@@ -199,4 +201,9 @@ public class ProcessContext implements ContextWithFile {
     public BallerinaModel.Expression contextVarRef() {
         return new BallerinaModel.Expression.VariableReference(CONTEXT_VAR_NAME);
     }
+
+    public BallerinaModel.Expression.VariableReference dbClient(String sharedResourcePropertyName) {
+        return projectContext.dbClient(sharedResourcePropertyName);
+    }
+
 }
