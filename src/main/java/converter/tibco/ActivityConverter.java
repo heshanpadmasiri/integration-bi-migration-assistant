@@ -339,19 +339,25 @@ class ActivityConverter {
             BallerinaModel.Expression.VariableReference inputVariable,
             TibcoModel.Scope.Flow.Activity.Expression.XSLT xslt
     ) {
-        cx.processContext.addLibraryImport(Library.XSLT);
+        cx.addLibraryImport(Library.XSLT);
+        String stylesheetTransformer = cx.getTransformXSLTFn();
+        BallerinaModel.Expression.FunctionCall transformerCall =
+                new BallerinaModel.Expression.FunctionCall(stylesheetTransformer,
+                        List.of(new BallerinaModel.Expression.XMLTemplate(xslt.expression())));
         BallerinaModel.Expression.FunctionCall callExpr = new BallerinaModel.Expression.FunctionCall("xslt:transform",
                 new BallerinaModel.Expression[]{inputVariable,
-                        new BallerinaModel.Expression.XMLTemplate(xslt.expression()), cx.contextVarRef()});
+                        transformerCall, cx.contextVarRef()});
         BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(callExpr);
         return new BallerinaModel.VarDeclStatment(XML, cx.getAnnonVarName(), checkPanic);
     }
 
-    private static BallerinaModel.VarAssignStatement addToContext(ActivityContext cx,
-                                                                  BallerinaModel.Expression.VariableReference value,
-                                                                  String key) {
+    private static BallerinaModel.Statement addToContext(ActivityContext cx,
+                                                         BallerinaModel.Expression.VariableReference value,
+                                                         String key) {
         assert !key.isEmpty();
-        return new BallerinaModel.VarAssignStatement(
-                new BallerinaModel.Expression.MemberAccess(cx.contextVarRef(), key), value);
+        String addToContextFn = cx.getAddToContextFn();
+        return new BallerinaModel.CallStatement(
+                new BallerinaModel.Expression.FunctionCall(addToContextFn, List.of(cx.contextVarRef(),
+                        new BallerinaModel.Expression.StringConstant(key), value)));
     }
 }

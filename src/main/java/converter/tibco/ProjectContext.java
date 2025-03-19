@@ -48,6 +48,7 @@ public class ProjectContext {
     private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
     private final Set<BallerinaModel.Import> utilityFunctionImports = new HashSet<>();
     private final List<BallerinaModel.ModuleVar> utilityConstants = new ArrayList<>();
+    private final Set<Intrinsics> utilityIntrinsics = new HashSet<>();
 
     private final Map<String, BallerinaModel.Expression.VariableReference> dbClients = new HashMap<>();
     private final List<String> typeIntrinsics = new ArrayList<>();
@@ -80,7 +81,7 @@ public class ProjectContext {
 
     String getToXmlFunction() {
         if (toXMLFunction == null) {
-            importLibraryIfNeeded(Library.XML_DATA);
+            importLibraryIfNeededToUtility(Library.XML_DATA);
             String functionName = "toXML";
             utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
                     List.of(new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(ANYDATA), "data")),
@@ -94,7 +95,7 @@ public class ProjectContext {
 
     String getJsonToXMLFunction() {
         if (jsonToXMLFunction == null) {
-            importLibraryIfNeeded(Library.XML_DATA);
+            importLibraryIfNeededToUtility(Library.XML_DATA);
             String functionName = "fromJson";
             utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
                     List.of(new BallerinaModel.Parameter(JSON, "data")),
@@ -150,13 +151,13 @@ public class ProjectContext {
         return new BallerinaModel.TypeDesc.TypeReference(httpConfigTy);
     }
 
-    private void importLibraryIfNeeded(Library library) {
+    private void importLibraryIfNeededToUtility(Library library) {
         utilityFunctionImports.add(new BallerinaModel.Import(library.orgName, library.moduleName, Optional.empty()));
     }
 
     String createConvertToTypeFunction(BallerinaModel.TypeDesc targetType) {
         String functionName = "convertTo" + ConversionUtils.sanitizes(targetType.toString());
-        importLibraryIfNeeded(Library.XML_DATA);
+        importLibraryIfNeededToUtility(Library.XML_DATA);
         BallerinaModel.Expression.FunctionCall parseAsTypeCall =
                 new BallerinaModel.Expression.FunctionCall("xmldata:parseAsType", new String[]{"input"});
         BallerinaModel.Expression.CheckPanic checkPanic = new BallerinaModel.Expression.CheckPanic(parseAsTypeCall);
@@ -177,8 +178,12 @@ public class ProjectContext {
         List<BallerinaModel.Function> sortedFunctions = utilityFunctions.stream()
                 .sorted(Comparator.comparing(BallerinaModel.Function::methodName))
                 .toList();
+        List<String> sortedIntrinsics = utilityIntrinsics.stream()
+                .sorted(Comparator.comparing(Intrinsics::name))
+                .map(each -> each.body)
+                .toList();
         return new BallerinaModel.TextDocument("utils.bal", imports, List.of(), sortedConstants,
-                List.of(), List.of(), sortedFunctions, List.of());
+                List.of(), List.of(), sortedFunctions, List.of(), sortedIntrinsics);
     }
 
     private BallerinaModel.TextDocument typesFile() {
@@ -302,7 +307,7 @@ public class ProjectContext {
 
     private BallerinaModel.Expression.VariableReference createDbClient(String name) {
         // TODO: handle configurations
-        importLibraryIfNeeded(Library.JDBC);
+        importLibraryIfNeededToUtility(Library.JDBC);
         BallerinaModel.ModuleVar moduleVar = BallerinaModel.ModuleVar.constant(ConversionUtils.sanitizes(name),
                 new BallerinaModel.TypeDesc.TypeReference("jdbc:Client"),
                 new BallerinaModel.Expression.CheckPanic(
@@ -310,6 +315,23 @@ public class ProjectContext {
                                 List.of(new BallerinaModel.Expression.StringConstant(name)))));
         utilityConstants.add(moduleVar);
         return new BallerinaModel.Expression.VariableReference(moduleVar.name());
+    }
+
+    public String getAddToContextFn() {
+        utilityIntrinsics.add(Intrinsics.ADD_TO_CONTEXT);
+        return Intrinsics.ADD_TO_CONTEXT.name;
+    }
+
+    public String getTransformXSLTFn() {
+        addTransformXSLTFnIfNeeded();
+        return Intrinsics.TRANSFORM_XSLT.name;
+    }
+
+    public void addTransformXSLTFnIfNeeded() {
+        if (utilityIntrinsics.contains(Intrinsics.TRANSFORM_XSLT)) {
+            return;
+        }
+        utilityIntrinsics.add(Intrinsics.TRANSFORM_XSLT);
     }
 
     private static class ContextWrapperForTypeFile implements ContextWithFile {
