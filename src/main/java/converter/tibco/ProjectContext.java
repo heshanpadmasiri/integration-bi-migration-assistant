@@ -43,7 +43,6 @@ import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 public class ProjectContext {
 
     private final Map<TibcoModel.Process, ProcessContext> processContextMap = new HashMap<>();
-    private final Map<String, Optional<BallerinaModel.ModuleTypeDef>> moduleTypeDefs = new HashMap<>();
 
     private final List<BallerinaModel.Function> utilityFunctions = new ArrayList<>();
     private final Set<BallerinaModel.Import> utilityFunctionImports = new HashSet<>();
@@ -124,7 +123,7 @@ public class ProjectContext {
         //     map<string> parameters = {};
         // };
         String httpConfigTy = "HTTPRequestConfig";
-        if (moduleTypeDefs.containsKey(httpConfigTy)) {
+        if (typeCx.moduleTypeDefs.containsKey(httpConfigTy)) {
             return new BallerinaModel.TypeDesc.TypeReference(httpConfigTy);
         }
         BallerinaModel.ModuleTypeDef httpConfigType = new BallerinaModel.ModuleTypeDef(httpConfigTy,
@@ -145,7 +144,7 @@ public class ProjectContext {
                                         new BallerinaModel.Expression.MappingConstructor(List.of()))
                         )
                 ));
-        moduleTypeDefs.put(httpConfigTy, Optional.of(httpConfigType));
+        typeCx.moduleTypeDefs.put(httpConfigTy, Optional.of(httpConfigType));
         typeIntrinsics.add(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG.body);
 
         return new BallerinaModel.TypeDesc.TypeReference(httpConfigTy);
@@ -188,7 +187,7 @@ public class ProjectContext {
 
     private BallerinaModel.TextDocument typesFile() {
         List<BallerinaModel.ModuleTypeDef> typeDefs = new ArrayList<>();
-        for (Map.Entry<String, Optional<BallerinaModel.ModuleTypeDef>> entry : moduleTypeDefs.entrySet()) {
+        for (Map.Entry<String, Optional<BallerinaModel.ModuleTypeDef>> entry : typeCx.moduleTypeDefs.entrySet()) {
             if (entry.getValue().isPresent()) {
                 typeDefs.add(entry.getValue().get());
             } else {
@@ -212,7 +211,7 @@ public class ProjectContext {
     BallerinaModel.TypeDesc getTypeByName(String name, ContextWithFile cx) {
         // TODO: how to handle names spaces
         name = ConversionUtils.sanitizes(XmlToTibcoModelConverter.getTagNameWithoutNameSpace(name));
-        if (moduleTypeDefs.containsKey(name)) {
+        if (typeCx.moduleTypeDefs.containsKey(name)) {
             return new BallerinaModel.TypeDesc.TypeReference(name);
         }
         if (cx.hasConstantWithName(name)) {
@@ -229,8 +228,8 @@ public class ProjectContext {
             return libraryType.get();
         }
 
-        if (!moduleTypeDefs.containsKey(name)) {
-            moduleTypeDefs.put(name, Optional.empty());
+        if (!typeCx.moduleTypeDefs.containsKey(name)) {
+            typeCx.moduleTypeDefs.put(name, Optional.empty());
         }
         return new BallerinaModel.TypeDesc.TypeReference(name);
     }
@@ -270,12 +269,7 @@ public class ProjectContext {
     }
 
     boolean addModuleTypeDef(String name, BallerinaModel.ModuleTypeDef moduleTypeDef) {
-        if (moduleTypeDef.typeDesc() instanceof BallerinaModel.TypeDesc.TypeReference(String name1) &&
-                name1.equals(name)) {
-            return false;
-        }
-        this.moduleTypeDefs.put(name, Optional.of(moduleTypeDef));
-        return true;
+        return typeCx.addModuleTypeDef(name, moduleTypeDef);
     }
 
     public void incrementTypeCount() {
@@ -337,6 +331,7 @@ public class ProjectContext {
     private static class ContextWrapperForTypeFile implements ContextWithFile {
 
         final Set<BallerinaModel.Import> imports = new HashSet<>();
+        private final Map<String, Optional<BallerinaModel.ModuleTypeDef>> moduleTypeDefs = new HashMap<>();
         final ProjectContext cx;
 
         private ContextWrapperForTypeFile(ProjectContext cx) {
@@ -360,8 +355,48 @@ public class ProjectContext {
 
         @Override
         public boolean addModuleTypeDef(String name, BallerinaModel.ModuleTypeDef defn) {
-            return cx.addModuleTypeDef(name, defn);
+            if (defn.typeDesc() instanceof BallerinaModel.TypeDesc.TypeReference(String name1) &&
+                    name1.equals(name)) {
+                return false;
+            }
+            addAnnotationsImports(defn.typeDesc());
+            addMissingImports(defn.typeDesc());
+            this.moduleTypeDefs.put(name, Optional.of(defn));
+            return true;
         }
+
+        // Ideally this shouldn't be needed since type reference should add the imports. But for WSDL definitions they
+        // are processed in the context of process so we add imports to process (which is problematic, but works for
+        // now since they are http) but we add the type definitions to the types files. Need to revisit this and
+        // properly fix this.
+        private void addMissingImports(BallerinaModel.TypeDesc td) {
+            if (td instanceof BallerinaModel.TypeDesc.UnionTypeDesc(
+                    Collection<? extends BallerinaModel.TypeDesc> members
+            )) {
+                boolean isHttp = members.stream()
+                        .filter(member -> member instanceof BallerinaModel.TypeDesc.TypeReference)
+                        .map(member -> ((BallerinaModel.TypeDesc.TypeReference) member).name())
+                        .anyMatch(name -> name.startsWith("http:"));
+                if (isHttp) {
+                    importLibraryIfNeeded(Library.HTTP);
+                }
+            }
+        }
+
+        private void addAnnotationsImports(BallerinaModel.TypeDesc td) {
+            if (!(td instanceof BallerinaModel.TypeDesc.RecordTypeDesc recordTypeDesc)) {
+                return;
+            }
+            recordTypeDesc.namespace().ifPresent(ignored -> importLibraryIfNeeded(Library.XML_DATA));
+            if (recordTypeDesc.fields().stream().anyMatch(recordField -> recordField.namespace().isPresent())) {
+                importLibraryIfNeeded(Library.XML_DATA);
+            }
+        }
+
+        private void importLibraryIfNeeded(Library library) {
+            imports.add(new BallerinaModel.Import(library.orgName, library.moduleName, Optional.empty()));
+        }
+
 
         @Override
         public ProjectContext getProjectContext() {
