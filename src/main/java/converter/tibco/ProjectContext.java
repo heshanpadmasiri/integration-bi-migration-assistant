@@ -134,16 +134,16 @@ public class ProjectContext {
                                 new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("Method", STRING),
                                 new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("RequestURI", STRING),
                                 // TODO: handle put
-                                new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("PostData", JSON, Optional.of(
-                                        new BallerinaModel.Expression.StringConstant(""))),
+                                new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("PostData", JSON,
+                                        new BallerinaModel.Expression.StringConstant("")
+                                ),
                                 new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("Headers",
-                                        new BallerinaModel.TypeDesc.MapTypeDesc(STRING), Optional.of(
-                                        new BallerinaModel.Expression.MappingConstructor(List.of()))),
+                                        new BallerinaModel.TypeDesc.MapTypeDesc(STRING),
+                                        new BallerinaModel.Expression.MappingConstructor(List.of())),
                                 new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField("parameters",
-                                        new BallerinaModel.TypeDesc.MapTypeDesc(STRING), Optional.of(
-                                        new BallerinaModel.Expression.MappingConstructor(List.of())))
-                        ),
-                        Optional.empty()
+                                        new BallerinaModel.TypeDesc.MapTypeDesc(STRING),
+                                        new BallerinaModel.Expression.MappingConstructor(List.of()))
+                        )
                 ));
         moduleTypeDefs.put(httpConfigTy, Optional.of(httpConfigType));
         typeIntrinsics.add(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG.body);

@@ -24,7 +24,6 @@ import tibco.TibcoModel;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 public final class ConversionUtils {
 
@@ -72,7 +71,7 @@ public final class ConversionUtils {
                         from(each.type())))
                 .toList();
         BallerinaModel.TypeDesc.RecordTypeDesc recordTy =
-                new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), fields, Optional.empty());
+                new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), fields);
         processContext.addModuleTypeDef(typeName, new BallerinaModel.ModuleTypeDef(typeName, recordTy));
         return processContext.getTypeByName(typeName);
     }
@@ -98,5 +97,9 @@ public final class ConversionUtils {
         BallerinaModel.BallerinaExpression templateExpr = new BallerinaModel.BallerinaExpression(sb.toString());
         return new BallerinaModel.VarDeclStatment(cx.processContext.getTypeByName("sql:ParameterizedQuery"),
                 cx.getAnnonVarName(), templateExpr);
+    }
+
+    static BallerinaModel.TypeDesc.RecordTypeDesc.Namespace createNamespace(TibcoModel.NameSpace nameSpace) {
+        return new BallerinaModel.TypeDesc.RecordTypeDesc.Namespace(nameSpace.prefix(), nameSpace.uri());
     }
 }

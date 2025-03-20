@@ -312,7 +312,7 @@ public class ProcessConverter {
     ) {
         List<BallerinaModel.TypeDesc> inclusions = List.of(cx.getTypeByName(complexContent.extension().base().name()));
         RecordBody body = getRecordBody(cx, complexContent.extension().elements());
-        return new BallerinaModel.TypeDesc.RecordTypeDesc(inclusions, body.fields(), body.rest());
+        return new BallerinaModel.TypeDesc.RecordTypeDesc(inclusions, body.fields(), body.rest(), Optional.empty());
     }
 
     private static BallerinaModel.TypeDesc.RecordTypeDesc convertSequenceBody(
@@ -321,7 +321,7 @@ public class ProcessConverter {
     ) {
         Collection<TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members = sequenceBody.elements();
         RecordBody body = getRecordBody(cx, members);
-        return new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), body.fields(), body.rest());
+        return new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), body.fields(), body.rest(), Optional.empty());
     }
 
     private static RecordBody getRecordBody(
