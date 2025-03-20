@@ -29,7 +29,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
@@ -292,89 +291,6 @@ public class ProcessConverter {
                 body);
     }
 
-    static BallerinaModel.ModuleTypeDef convertComplexType(ProcessContext cx,
-                                                           TibcoModel.Type.Schema.ComplexType complexType) {
-        BallerinaModel.TypeDesc typeDesc = switch (complexType.body()) {
-            case TibcoModel.Type.Schema.ComplexType.Choice choice -> convertTypeChoice(cx, choice);
-            case TibcoModel.Type.Schema.ComplexType.SequenceBody sequenceBody -> convertSequenceBody(cx, sequenceBody);
-            case TibcoModel.Type.Schema.ComplexType.ComplexContent complexContent ->
-                    convertTypeInclusion(cx, complexContent);
-        };
-        String name = complexType.name();
-        BallerinaModel.ModuleTypeDef typeDef = new BallerinaModel.ModuleTypeDef(name, typeDesc);
-        cx.addModuleTypeDef(name, typeDef);
-        return typeDef;
-    }
-
-    private static BallerinaModel.TypeDesc.RecordTypeDesc convertTypeInclusion(
-            ProcessContext cx,
-            TibcoModel.Type.Schema.ComplexType.ComplexContent complexContent
-    ) {
-        List<BallerinaModel.TypeDesc> inclusions = List.of(cx.getTypeByName(complexContent.extension().base().name()));
-        RecordBody body = getRecordBody(cx, complexContent.extension().elements());
-        return new BallerinaModel.TypeDesc.RecordTypeDesc(inclusions, body.fields(), body.rest(), Optional.empty());
-    }
-
-    private static BallerinaModel.TypeDesc.RecordTypeDesc convertSequenceBody(
-            ProcessContext cx,
-            TibcoModel.Type.Schema.ComplexType.SequenceBody sequenceBody
-    ) {
-        Collection<TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members = sequenceBody.elements();
-        RecordBody body = getRecordBody(cx, members);
-        return new BallerinaModel.TypeDesc.RecordTypeDesc(List.of(), body.fields(), body.rest(), Optional.empty());
-    }
-
-    private static RecordBody getRecordBody(
-            ProcessContext cx,
-            Collection<? extends TibcoModel.Type.Schema.ComplexType.SequenceBody.Member> members
-    ) {
-        List<BallerinaModel.TypeDesc.RecordTypeDesc.RecordField> fields = new ArrayList<>();
-        Optional<BallerinaModel.TypeDesc> rest = Optional.empty();
-        for (TibcoModel.Type.Schema.ComplexType.SequenceBody.Member member : members) {
-            switch (member) {
-                case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Element element -> {
-                    BallerinaModel.TypeDesc typeDesc = cx.getTypeByName(element.type().name());
-                    fields.add(new BallerinaModel.TypeDesc.RecordTypeDesc.RecordField(element.name(), typeDesc));
-                }
-                case TibcoModel.Type.Schema.ComplexType.SequenceBody.Member.Rest ignored -> {
-                    // TODO: handle this properly
-                    rest = Optional.of(PredefinedTypes.ANYDATA);
-                }
-                case TibcoModel.Type.Schema.ComplexType.Choice choice -> {
-                    rest = Optional.of(convertTypeChoice(cx, choice));
-                }
-            }
-        }
-        return new RecordBody(fields, rest);
-    }
-
-    private record RecordBody(List<BallerinaModel.TypeDesc.RecordTypeDesc.RecordField> fields,
-                              Optional<BallerinaModel.TypeDesc> rest) {
-
-    }
-
-    static BallerinaModel.TypeDesc.UnionTypeDesc convertTypeChoice(ProcessContext cx,
-                                                                   TibcoModel.Type.Schema.ComplexType.Choice choice) {
-        List<? extends BallerinaModel.TypeDesc> types = choice.elements().stream().map(element -> {
-            BallerinaModel.TypeDesc typeDesc = cx.getTypeByName(element.ref().name());
-            assert element.maxOccurs() == 1;
-            if (element.minOccurs() == 0) {
-                return BallerinaModel.TypeDesc.UnionTypeDesc.of(typeDesc, BallerinaModel.TypeDesc.BuiltinType.NIL);
-            } else {
-                return typeDesc;
-            }
-        }).flatMap(type -> {
-            if (type instanceof BallerinaModel.TypeDesc.UnionTypeDesc(
-                    Collection<? extends BallerinaModel.TypeDesc> members
-            )) {
-                return members.stream();
-            } else {
-                return Stream.of(type);
-            }
-        }).distinct().toList();
-        return new BallerinaModel.TypeDesc.UnionTypeDesc(types);
-    }
-
     private static BallerinaModel.Function generateProcessFunction(ProcessContext cx,
                                                                    TibcoModel.Process process) {
         String name = cx.getProcessFunction();
@@ -401,8 +317,4 @@ public class ProcessConverter {
                 List.of(new BallerinaModel.Parameter(XML, "input")), Optional.of(XML.toString()), body);
     }
 
-    static class PredefinedTypes {
-
-        private static final BallerinaModel.TypeDesc.BuiltinType ANYDATA = BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
-    }
 }

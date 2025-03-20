@@ -65,6 +65,41 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             }
         }
 
+        record ListType(List<TypeDesc> required, Optional<TypeDesc> rest) implements TypeDesc {
+
+            public ListType {
+                if (required.isEmpty() && rest.isEmpty()) {
+                    throw new IllegalArgumentException("ListType must have at least one required type or a rest type");
+                }
+            }
+
+            public ListType(TypeDesc rest) {
+                this(List.of(), Optional.of(rest));
+            }
+
+            public ListType(List<TypeDesc> required) {
+                this(required, Optional.empty());
+            }
+
+            public ListType(List<TypeDesc> required, TypeDesc rest) {
+                this(required, Optional.of(rest));
+            }
+
+            @Override
+            public String toString() {
+                if (required.isEmpty()) {
+                    assert rest.isPresent();
+                    return rest().get() + "[]";
+                }
+                StringBuilder sb = new StringBuilder();
+                sb.append("[");
+                sb.append(String.join(", ", required.stream().map(Objects::toString).toList()));
+                rest.ifPresent(typeDesc -> sb.append(", ...").append(typeDesc));
+                sb.append("]");
+                return sb.toString();
+            }
+        }
+
         record RecordTypeDesc(List<TypeDesc> inclusions, List<RecordField> fields, Optional<TypeDesc> rest,
                               Optional<Namespace> namespace)
                 implements TypeDesc {
@@ -113,18 +148,22 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             }
 
             public record RecordField(String name, TypeDesc typeDesc, Optional<Expression> defaultValue,
-                                      Optional<Namespace> namespace) {
+                                      Optional<Namespace> namespace, boolean optional) {
 
                 public RecordField(String name, TypeDesc typeDesc, Expression defaultValue) {
-                    this(name, typeDesc, Optional.of(defaultValue), Optional.empty());
+                    this(name, typeDesc, Optional.of(defaultValue), Optional.empty(), false);
                 }
 
                 public RecordField(String name, TypeDesc typeDesc) {
-                    this(name, typeDesc, Optional.empty(), Optional.empty());
+                    this(name, typeDesc, Optional.empty(), Optional.empty(), false);
                 }
 
                 public RecordField(String name, TypeDesc typeDesc, Namespace namespace) {
-                    this(name, typeDesc, Optional.empty(), Optional.of(namespace));
+                    this(name, typeDesc, Optional.empty(), Optional.of(namespace), false);
+                }
+
+                public RecordField(String name, TypeDesc typeDesc, Namespace namespace, boolean optional) {
+                    this(name, typeDesc, Optional.empty(), Optional.of(namespace), optional);
                 }
 
                 @Override
