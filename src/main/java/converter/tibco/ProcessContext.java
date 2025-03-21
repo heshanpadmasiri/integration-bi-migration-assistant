@@ -214,4 +214,12 @@ public class ProcessContext implements ContextWithFile {
     public String getTransformXSLTFn() {
         return projectContext.getTransformXSLTFn();
     }
+
+    public BallerinaModel.TypeDesc getFileWriteConfigType() {
+        return projectContext.getFileWriteConfigType();
+    }
+
+    public String getFileWriteFunction() {
+        return projectContext.getFileWriteFunction(this);
+    }
 }

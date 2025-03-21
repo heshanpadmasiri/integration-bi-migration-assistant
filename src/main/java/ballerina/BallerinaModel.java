@@ -457,7 +457,7 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
         }
     }
 
-    public record CallStatement(Expression.FunctionCall callExpr) implements Statement {
+    public record CallStatement(Expression callExpr) implements Statement {
 
         @Override
         public String toString() {

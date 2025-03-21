@@ -113,8 +113,45 @@ class ActivityConverter {
             case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.SQL sql -> createSQLOperation(cx, result, sql);
             case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.SendHTTPResponse ignored ->
                     List.of(new BallerinaModel.Return<>(result));
+            case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.FileWrite fileWrite ->
+                    createFileWriteOperation(cx, result, fileWrite);
         };
         body.addAll(rest);
+        return body;
+    }
+
+    private static List<BallerinaModel.Statement> createFileWriteOperation(
+            ActivityContext cx,
+            BallerinaModel.Expression.VariableReference result,
+            TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.FileWrite fileWrite
+    ) {
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        BallerinaModel.TypeDesc dataType = cx.getFileWriteConfigType();
+        BallerinaModel.VarDeclStatment dataDecl = new BallerinaModel.VarDeclStatment(dataType, cx.getAnnonVarName(),
+                new BallerinaModel.Expression.FunctionCall(cx.getConvertToTypeFunction(dataType), List.of(result)));
+        body.add(dataDecl);
+
+        BallerinaModel.VarDeclStatment fileNameDecl = new BallerinaModel.VarDeclStatment(STRING, cx.getAnnonVarName(),
+                new BallerinaModel.Expression.FieldAccess(
+                        new BallerinaModel.Expression.VariableReference(dataDecl.varName()),
+                        "fileName"));
+        body.add(fileNameDecl);
+
+        BallerinaModel.VarDeclStatment textContentDecl =
+                new BallerinaModel.VarDeclStatment(STRING, cx.getAnnonVarName(),
+                        new BallerinaModel.Expression.FieldAccess(
+                                new BallerinaModel.Expression.VariableReference(dataDecl.varName()),
+                                "textContent"));
+        body.add(textContentDecl);
+
+        BallerinaModel.CallStatement callStatement = new BallerinaModel.CallStatement(
+                new BallerinaModel.Expression.CheckPanic(new BallerinaModel.Expression.FunctionCall(
+                        cx.getFileWriteFunction(),
+                        List.of(new BallerinaModel.Expression.VariableReference(fileNameDecl.varName()),
+                                new BallerinaModel.Expression.VariableReference(textContentDecl.varName())))));
+        body.add(callStatement);
+
+        body.add(new BallerinaModel.Return<>(result));
         return body;
     }
 
