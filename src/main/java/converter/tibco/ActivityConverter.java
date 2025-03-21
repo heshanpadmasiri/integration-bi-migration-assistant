@@ -111,6 +111,8 @@ class ActivityConverter {
             case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.JsonOperation jsonOperation ->
                     createJsonOperation(cx, result, jsonOperation, activityExtension.outputVariable());
             case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.SQL sql -> createSQLOperation(cx, result, sql);
+            case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.SendHTTPResponse ignored ->
+                    List.of(new BallerinaModel.Return<>(result));
         };
         body.addAll(rest);
         return body;
