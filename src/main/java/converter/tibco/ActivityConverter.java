@@ -165,9 +165,10 @@ class ActivityConverter {
         body.add(dataDecl);
 
         BallerinaModel.VarDeclStatment fileNameDecl = new BallerinaModel.VarDeclStatment(STRING, cx.getAnnonVarName(),
-                new BallerinaModel.Expression.FieldAccess(
+                new BallerinaModel.Expression.TypeCast(STRING, new BallerinaModel.Expression.FieldAccess(
                         new BallerinaModel.Expression.VariableReference(dataDecl.varName()),
-                        "fileName"));
+                        "fileName"))
+        );
         body.add(fileNameDecl);
 
         BallerinaModel.VarDeclStatment textContentDecl =
