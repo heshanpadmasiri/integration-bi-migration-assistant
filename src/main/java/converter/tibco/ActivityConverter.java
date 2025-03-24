@@ -115,8 +115,31 @@ class ActivityConverter {
                     List.of(new BallerinaModel.Return<>(result));
             case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.FileWrite fileWrite ->
                     createFileWriteOperation(cx, result, fileWrite);
+            case TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.Log log -> createLogOperation(cx, result, log);
         };
         body.addAll(rest);
+        return body;
+    }
+
+    private static List<BallerinaModel.Statement> createLogOperation(
+            ActivityContext cx,
+            BallerinaModel.Expression.VariableReference result,
+            TibcoModel.Scope.Flow.Activity.ActivityExtension.Config.Log log
+    ) {
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+
+        BallerinaModel.TypeDesc dataType = cx.getLogInputType();
+        BallerinaModel.VarDeclStatment dataDecl = new BallerinaModel.VarDeclStatment(dataType, cx.getAnnonVarName(),
+                new BallerinaModel.Expression.FunctionCall(cx.getConvertToTypeFunction(dataType), List.of(result)));
+        body.add(dataDecl);
+
+        BallerinaModel.CallStatement callStatement = new BallerinaModel.CallStatement(
+                new BallerinaModel.Expression.FunctionCall(cx.getLogFunction(), List.of(
+                        new BallerinaModel.Expression.VariableReference(dataDecl.varName()))));
+        body.add(callStatement);
+
+        body.add(new BallerinaModel.Return<>(result));
+
         return body;
     }
 

@@ -172,6 +172,9 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
                     namespace.ifPresent(ns -> sb.append(ns.annotation()));
                     sb.append(typeDesc).append(" ").append(name);
                     defaultValue.ifPresent(expression -> sb.append(" = ").append(expression));
+                    if (optional) {
+                        sb.append("?");
+                    }
                     sb.append(";");
                     return sb.toString();
                 }
