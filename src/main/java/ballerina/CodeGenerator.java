@@ -244,7 +244,7 @@ public class CodeGenerator {
                 }
 
                 yield String.format("if (%s) { %s } %s else { %s }",
-                        ifElseStmt.ifCondition().expr(),
+                        ifElseStmt.ifCondition(),
                         String.join("", ifElseStmt.ifBody().stream()
                                 .map(CodeGenerator::constructBallerinaStatements).toList()),
                         stringBuilder,

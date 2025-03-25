@@ -73,3 +73,8 @@ function transformXSLT(xml input) returns xml {
     }
     return input;
 }
+
+function test(xml input, string xpath) returns boolean {
+    // TODO: support XPath
+    return false;
+}

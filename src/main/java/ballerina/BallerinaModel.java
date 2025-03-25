@@ -323,9 +323,29 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
         }
     }
 
-    public record IfElseStatement(BallerinaExpression ifCondition, List<Statement> ifBody,
+    public record IfElseStatement(Expression ifCondition, List<Statement> ifBody,
                                   List<ElseIfClause> elseIfClauses, List<Statement> elseBody) implements Statement {
 
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("if ").append(ifCondition).append(" {\n");
+            for (Statement statement : ifBody) {
+                sb.append(statement).append("\n");
+            }
+            sb.append("}");
+            for (ElseIfClause elseIfClause : elseIfClauses) {
+                sb.append(elseIfClause);
+            }
+            if (!elseBody.isEmpty()) {
+                sb.append("else {\n");
+                for (Statement statement : elseBody) {
+                    sb.append(statement).append("\n");
+                }
+                sb.append("}");
+            }
+            return sb.toString();
+        }
     }
 
     public record Comment(String comment) implements Statement {
@@ -490,6 +510,16 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public record ElseIfClause(BallerinaExpression condition, List<Statement> elseIfBody) {
 
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("else if ").append(condition).append(" {\n");
+            for (Statement statement : elseIfBody) {
+                sb.append(statement).append("\n");
+            }
+            sb.append("}");
+            return sb.toString();
+        }
     }
 
     public record DoStatement(List<Statement> doBody, Optional<OnFailClause> onFailClause) implements Statement {

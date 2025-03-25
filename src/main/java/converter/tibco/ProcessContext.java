@@ -230,4 +230,8 @@ public class ProcessContext implements ContextWithFile {
     String getLogFunction() {
         return projectContext.getLogFunction();
     }
+
+    public String getPredicateTestFunction() {
+        return projectContext.getPredicateTestFunction();
+    }
 }
