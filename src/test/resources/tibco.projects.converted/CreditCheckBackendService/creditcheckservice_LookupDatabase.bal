@@ -80,39 +80,39 @@ function process_creditcheckservice_LookupDatabase(xml input) returns xml {
         result0 -> StartToEnd;
     }
     worker JDBCQueryToEnd {
-        error:NoMessage|xml input = <- activityExtension_9_worker;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- activityExtension_9_worker;
+        if inputVal is error:NoMessage {
             return;
         }
-        input -> activityExtension_10_worker;
+        inputVal -> activityExtension_10_worker;
     }
     worker JDBCUpdateToEnd {
-        error:NoMessage|xml input = <- activityExtension_10_worker;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- activityExtension_10_worker;
+        if inputVal is error:NoMessage {
             return;
         }
-        input -> activityExtension_8_worker;
+        inputVal -> activityExtension_8_worker;
     }
     worker QueryRecordsToThrow {
-        error:NoMessage|xml input = <- activityExtension_9_worker;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- activityExtension_9_worker;
+        if inputVal is error:NoMessage {
             return;
         }
-        input -> throw_worker;
+        inputVal -> throw_worker;
     }
     worker StartToEnd {
-        error:NoMessage|xml input = <- start_worker;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- start_worker;
+        if inputVal is error:NoMessage {
             return;
         }
-        input -> activityExtension_9_worker;
+        inputVal -> activityExtension_9_worker;
     }
     worker activityExtension_10_worker {
-        error:NoMessage|xml input = <- JDBCQueryToEnd;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- JDBCQueryToEnd;
+        if inputVal is error:NoMessage {
             return;
         }
-        xml|error output = activityExtension_10(input, context);
+        xml|error output = activityExtension_10(inputVal, context);
         if output is error {
             output -> errorHandler;
             return;
@@ -120,11 +120,11 @@ function process_creditcheckservice_LookupDatabase(xml input) returns xml {
         output -> JDBCUpdateToEnd;
     }
     worker activityExtension_8_worker {
-        error:NoMessage|xml input = <- JDBCUpdateToEnd;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- JDBCUpdateToEnd;
+        if inputVal is error:NoMessage {
             return;
         }
-        xml|error output = activityExtension_8(input, context);
+        xml|error output = activityExtension_8(inputVal, context);
         if output is error {
             output -> errorHandler;
             return;
@@ -132,11 +132,11 @@ function process_creditcheckservice_LookupDatabase(xml input) returns xml {
         output -> function;
     }
     worker activityExtension_9_worker {
-        error:NoMessage|xml input = <- StartToEnd;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- StartToEnd;
+        if inputVal is error:NoMessage {
             return;
         }
-        xml|error output = activityExtension_9(input, context);
+        xml|error output = activityExtension_9(inputVal, context);
         if output is error {
             output -> errorHandler;
             return;
@@ -148,11 +148,11 @@ function process_creditcheckservice_LookupDatabase(xml input) returns xml {
         }
     }
     worker throw_worker {
-        error:NoMessage|xml input = <- QueryRecordsToThrow;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- QueryRecordsToThrow;
+        if inputVal is error:NoMessage {
             return;
         }
-        xml|error output = throw(input, context);
+        xml|error output = throw(inputVal, context);
         if output is error {
             output -> errorHandler;
             return;

@@ -147,7 +147,7 @@ public class ProcessConverter {
 
         List<BallerinaModel.Statement> body = new ArrayList<>();
         BallerinaModel.VarDeclStatment inputDecl = createAlternateReceiveFromWorkers(
-                sources.stream().map(analysisResult::from).map(AnalysisResult.LinkData::workerName), "input");
+                sources.stream().map(analysisResult::from).map(AnalysisResult.LinkData::workerName), "inputVal");
         body.add(inputDecl);
         handleNoMessage(cx, inputDecl.ref(), body);
         BallerinaModel.Expression.FunctionCall callExpr = genereateActivityFunctionCall(cx, activity, inputDecl.ref());
@@ -310,7 +310,7 @@ public class ProcessConverter {
         Collection<TibcoModel.Scope.Flow.Activity> inputActivities = analysisResult.sources(link);
         BallerinaModel.VarDeclStatment input =
                 createAlternateReceiveFromWorkers(inputActivities.stream().map(each -> sourceWorker(cx, each)),
-                        "input");
+                        "inputVal");
         body.add(input);
         handleNoMessage(cx, input.ref(), body);
         AnalysisResult.LinkData linkData = analysisResult.from(link);

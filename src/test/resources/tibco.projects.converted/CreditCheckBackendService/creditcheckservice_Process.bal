@@ -76,32 +76,32 @@ function process_creditcheckservice_Process(xml input) returns xml {
         result0 -> LookupDatabaseToLogSuccess_Name;
     }
     worker LogToReply {
-        error:NoMessage|xml input = <- errorHandler;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- errorHandler;
+        if inputVal is error:NoMessage {
             return;
         }
-        input -> reply_6_worker;
+        inputVal -> reply_6_worker;
     }
     worker LogTopostOut {
-        error:NoMessage|xml input = <- activityExtension_worker;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- activityExtension_worker;
+        if inputVal is error:NoMessage {
             return;
         }
-        input -> reply_worker;
+        inputVal -> reply_worker;
     }
     worker LookupDatabaseToLogSuccess_Name {
-        error:NoMessage|xml input = <- start_worker;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- start_worker;
+        if inputVal is error:NoMessage {
             return;
         }
-        input -> activityExtension_worker;
+        inputVal -> activityExtension_worker;
     }
     worker activityExtension_worker {
-        error:NoMessage|xml input = <- LookupDatabaseToLogSuccess_Name;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- LookupDatabaseToLogSuccess_Name;
+        if inputVal is error:NoMessage {
             return;
         }
-        xml|error output = activityExtension(input, context);
+        xml|error output = activityExtension(inputVal, context);
         if output is error {
             output -> errorHandler;
             return;
@@ -109,11 +109,11 @@ function process_creditcheckservice_Process(xml input) returns xml {
         output -> LogTopostOut;
     }
     worker reply_6_worker {
-        error:NoMessage|xml input = <- LogToReply;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- LogToReply;
+        if inputVal is error:NoMessage {
             return;
         }
-        xml|error output = reply_6(input, context);
+        xml|error output = reply_6(inputVal, context);
         if output is error {
             output -> errorHandler;
             return;
@@ -121,11 +121,11 @@ function process_creditcheckservice_Process(xml input) returns xml {
         output -> function;
     }
     worker reply_worker {
-        error:NoMessage|xml input = <- LogTopostOut;
-        if input is error:NoMessage {
+        error:NoMessage|xml inputVal = <- LogTopostOut;
+        if inputVal is error:NoMessage {
             return;
         }
-        xml|error output = reply(input, context);
+        xml|error output = reply(inputVal, context);
         if output is error {
             output -> errorHandler;
             return;
