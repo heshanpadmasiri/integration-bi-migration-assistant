@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ERROR;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
@@ -109,10 +110,8 @@ public class ProcessConverter {
     private static String addTerminalWorkerResultCombinationStatements(
             ProcessContext cx, List<BallerinaModel.Statement> stmts,
             Collection<TibcoModel.Scope.Flow.Activity> endActivities) {
-        AnalysisResult analysisResult = cx.analysisResult;
-        String reciever = endActivities.stream().map(analysisResult::from).map(AnalysisResult.ActivityData::workerName)
-                .sorted().collect(Collectors.joining(" | "));
-        BallerinaModel.VarDeclStatment inputVarDecl = receiveVarFromPeer(reciever, "result");
+        BallerinaModel.VarDeclStatment inputVarDecl =
+                createAlternateReceiveFromActivities(cx, "result", endActivities.stream());
         stmts.add(inputVarDecl);
         BallerinaModel.VarDeclStatment cleanInputVarDecl =
                 new BallerinaModel.VarDeclStatment(XML, "result_clean",
@@ -121,6 +120,21 @@ public class ProcessConverter {
                                 new BallerinaModel.Expression.XMLTemplate(""), inputVarDecl.ref()));
         stmts.add(cleanInputVarDecl);
         return cleanInputVarDecl.varName();
+    }
+
+    private static BallerinaModel.VarDeclStatment createAlternateReceiveFromActivities(
+            ProcessContext cx,
+            String varName,
+            Stream<TibcoModel.Scope.Flow.Activity> activities
+    ) {
+        var analysisResult = cx.analysisResult;
+        return createAlternateReceiveFromWorkers(
+                activities.map(analysisResult::from).map(AnalysisResult.ActivityData::workerName), varName);
+    }
+
+    private static BallerinaModel.VarDeclStatment createAlternateReceiveFromWorkers(Stream<String> workers,
+                                                                                    String varName) {
+        return receiveVarFromPeer(workers.sorted().collect(Collectors.joining(" | ")), varName);
     }
 
     private static Optional<BallerinaModel.Statement> generateActivityWorker(ProcessContext cx,
@@ -303,27 +317,20 @@ public class ProcessConverter {
     private static BallerinaModel.Statement generateLink(ProcessContext cx,
                                                          TibcoModel.Scope.Flow.Link link) {
         List<BallerinaModel.Statement> body = new ArrayList<>();
-        List<String> inputVarNames = new ArrayList<>();
         var analysisResult = cx.analysisResult;
-        int inputCount = 0;
         Collection<TibcoModel.Scope.Flow.Activity> inputActivities = analysisResult.sources(link);
+        BallerinaModel.VarDeclStatment input =
+                createAlternateReceiveFromWorkers(inputActivities.stream().map(each -> sourceWorker(cx, each)),
+                        "input");
+        body.add(input);
+        handleNoMessage(cx, input.ref(), body);
         AnalysisResult.LinkData linkData = analysisResult.from(link);
-        for (TibcoModel.Scope.Flow.Activity activity : inputActivities) {
-            String inputVarName = "result" + inputCount++;
-            var input = addReceiveFromPeerStatement(sourceWorker(cx, activity), inputVarName, body);
-            handleNoMessage(cx, input, body);
-            inputVarNames.add(input.varName());
-        }
-        if (!inputVarNames.isEmpty()) {
-            for (TibcoModel.Scope.Flow.Activity destinations : analysisResult.destinations(link)) {
-                AnalysisResult.ActivityData activityData = analysisResult.from(destinations);
-                assert inputVarNames.size() == 1 : "Multiple input vars not supported";
-                String inputVarName = inputVarNames.getFirst();
-                String activityWorker = activityData.workerName();
-                BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
-                        new BallerinaModel.Expression.VariableReference(inputVarName), activityWorker);
-                body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
-            }
+        for (TibcoModel.Scope.Flow.Activity destinations : analysisResult.destinations(link)) {
+            AnalysisResult.ActivityData activityData = analysisResult.from(destinations);
+            String activityWorker = activityData.workerName();
+            BallerinaModel.Action.WorkerSendAction sendAction =
+                    new BallerinaModel.Action.WorkerSendAction(input.ref(), activityWorker);
+            body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
         }
         return new BallerinaModel.NamedWorkerDecl(linkData.workerName(), body);
     }
