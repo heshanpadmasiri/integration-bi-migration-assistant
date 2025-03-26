@@ -24,6 +24,7 @@ import converter.tibco.analyzer.ModelAnalyser;
 import tibco.TibcoModel;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +54,7 @@ public class ProcessContext implements ContextWithFile {
     public final ProjectContext projectContext;
     public final AnalysisResult analysisResult;
     private BallerinaModel.Expression.VariableReference contextRef;
+    private final Set<TibcoModel.Scope.Flow.Activity> activitiesWithErrorTransitions = new HashSet<>();
 
     private static final Logger logger = Logger.getLogger(ProcessContext.class.getName());
 
@@ -233,5 +235,17 @@ public class ProcessContext implements ContextWithFile {
 
     public String getPredicateTestFunction() {
         return projectContext.getPredicateTestFunction();
+    }
+
+    public String errorHandlerWorkerName() {
+        return "errorHandler";
+    }
+
+    public void markAsPossibleErrorTransition(TibcoModel.Scope.Flow.Activity activity) {
+        activitiesWithErrorTransitions.add(activity);
+    }
+
+    public Set<TibcoModel.Scope.Flow.Activity> activitiesWithErrorTransitions() {
+        return Collections.unmodifiableSet(activitiesWithErrorTransitions);
     }
 }

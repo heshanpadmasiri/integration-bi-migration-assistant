@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.BOOLEAN;
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ERROR;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.NIL;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.STRING;
@@ -87,9 +88,10 @@ public class ProjectContext {
             String functionName = "toXML";
             utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
                     List.of(new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(ANYDATA), "data")),
-                    Optional.of("xml"), List.of(new BallerinaModel.Return<>(
-                    Optional.of(new BallerinaModel.Expression.CheckPanic(
-                            new BallerinaModel.Expression.FunctionCall("xmldata:toXml", new String[]{"data"})))))));
+                    Optional.of(new BallerinaModel.TypeDesc.UnionTypeDesc(List.of(ERROR, XML)).toString()),
+                    List.of(new BallerinaModel.Return<>(
+                            Optional.of(new BallerinaModel.Expression.FunctionCall("xmldata:toXml",
+                                    new String[]{"data"}))))));
             toXMLFunction = functionName;
         }
         return toXMLFunction;
@@ -101,9 +103,11 @@ public class ProjectContext {
             String functionName = "fromJson";
             utilityFunctions.add(new BallerinaModel.Function(Optional.empty(), functionName,
                     List.of(new BallerinaModel.Parameter(JSON, "data")),
-                    Optional.of("xml"), List.of(new BallerinaModel.Return<>(
-                    Optional.of(new BallerinaModel.Expression.CheckPanic(
-                            new BallerinaModel.Expression.FunctionCall("xmldata:fromJson", new String[]{"data"})))))));
+                    Optional.of(new BallerinaModel.TypeDesc.UnionTypeDesc(List.of(ERROR, XML)).toString()),
+                    List.of(new BallerinaModel.Return<>(
+                            Optional.of(
+                                    new BallerinaModel.Expression.FunctionCall("xmldata:fromJson",
+                                            new String[]{"data"}))))));
             jsonToXMLFunction = functionName;
         }
         return jsonToXMLFunction;

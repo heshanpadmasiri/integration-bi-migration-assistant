@@ -251,13 +251,8 @@ public class CodeGenerator {
                         String.join("", ifElseStmt.elseBody().stream()
                                 .map(CodeGenerator::constructBallerinaStatements).toList()));
             }
-            case BallerinaModel.Return<?> ignored -> stmt.toString();
-            case BallerinaModel.Comment ignored -> stmt.toString();
-            case BallerinaModel.CallStatement ignored -> stmt.toString();
-            case BallerinaModel.VarDeclStatment ignored -> stmt.toString();
-            case BallerinaModel.NamedWorkerDecl ignored -> stmt.toString();
-            case BallerinaModel.VarAssignStatement ignored -> stmt.toString();
             case null -> throw new IllegalStateException();
+            default -> stmt.toString();
         };
     }
 
