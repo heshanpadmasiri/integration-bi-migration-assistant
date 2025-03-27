@@ -54,7 +54,6 @@ public class ProjectContext {
     private final Set<Intrinsics> utilityIntrinsics = new HashSet<>();
 
     private final Map<String, BallerinaModel.Expression.VariableReference> dbClients = new HashMap<>();
-    private final List<String> typeIntrinsics = new ArrayList<>();
     private String toXMLFunction = null;
     private String jsonToXMLFunction = null;
     private String toHttpConfigFunction = null;
@@ -182,8 +181,7 @@ public class ProjectContext {
                         )
                 ));
         typeCx.moduleTypeDefs.put(httpConfigTy, Optional.of(httpConfigType));
-        typeIntrinsics.add(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG.body);
-
+        typeCx.addIntrinsic(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG);
         return new BallerinaModel.TypeDesc.TypeReference(httpConfigTy);
     }
 
@@ -228,19 +226,7 @@ public class ProjectContext {
     }
 
     private BallerinaModel.TextDocument typesFile() {
-        List<BallerinaModel.ModuleTypeDef> typeDefs = new ArrayList<>();
-        for (Map.Entry<String, Optional<BallerinaModel.ModuleTypeDef>> entry : typeCx.moduleTypeDefs.entrySet()) {
-            if (entry.getValue().isPresent()) {
-                typeDefs.add(entry.getValue().get());
-            } else {
-                logger.warning(
-                        String.format("Type definition not found for %s using `anydata` as fallback", entry.getKey()));
-                typeDefs.add(new BallerinaModel.ModuleTypeDef(entry.getKey(), ANYDATA));
-            }
-        }
-        List<BallerinaModel.Import> imports = typeCx.imports.stream().toList();
-        return new BallerinaModel.TextDocument("types.bal", imports, typeDefs, List.of(), List.of(), List.of(),
-                List.of(), List.of(), typeIntrinsics, List.of());
+        return typeCx.serialize();
     }
 
     FunctionData getProcessStartFunction(String processName) {
@@ -384,6 +370,7 @@ public class ProjectContext {
 
         final Set<BallerinaModel.Import> imports = new HashSet<>();
         private final Map<String, Optional<BallerinaModel.ModuleTypeDef>> moduleTypeDefs = new HashMap<>();
+        private final List<String> typeIntrinsics = new ArrayList<>();
         final ProjectContext cx;
 
         private ContextWrapperForTypeFile(ProjectContext cx) {
@@ -398,6 +385,10 @@ public class ProjectContext {
         @Override
         public void addLibraryImport(Library library) {
             imports.add(new BallerinaModel.Import("ballerina", library.moduleName, Optional.empty()));
+        }
+
+        public void addIntrinsic(Intrinsics intrinsic) {
+            typeIntrinsics.add(intrinsic.body);
         }
 
         @Override
@@ -453,6 +444,22 @@ public class ProjectContext {
         @Override
         public ProjectContext getProjectContext() {
             return cx;
+        }
+
+        public BallerinaModel.TextDocument serialize() {
+            List<BallerinaModel.ModuleTypeDef> typeDefs = new ArrayList<>();
+            for (Map.Entry<String, Optional<BallerinaModel.ModuleTypeDef>> entry : moduleTypeDefs.entrySet()) {
+                if (entry.getValue().isPresent()) {
+                    typeDefs.add(entry.getValue().get());
+                } else {
+                    logger.warning(
+                            String.format("Type definition not found for %s using `anydata` as fallback",
+                                    entry.getKey()));
+                    typeDefs.add(new BallerinaModel.ModuleTypeDef(entry.getKey(), ANYDATA));
+                }
+            }
+            return new BallerinaModel.TextDocument("types.bal", this.imports.stream().toList(), typeDefs, List.of(),
+                    List.of(), List.of(), List.of(), List.of(), typeIntrinsics, List.of());
         }
     }
 }
