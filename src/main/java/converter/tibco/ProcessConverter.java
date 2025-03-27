@@ -129,13 +129,15 @@ public class ProcessConverter {
             Stream<TibcoModel.Scope.Flow.Activity> activities
     ) {
         var analysisResult = cx.analysisResult;
-        return createAlternateReceiveFromWorkers(
+        return createAlternateReceiveFromWorkers(cx,
                 activities.map(analysisResult::from).map(AnalysisResult.ActivityData::workerName), varName);
     }
 
-    private static BallerinaModel.VarDeclStatment createAlternateReceiveFromWorkers(Stream<String> workers,
+    private static BallerinaModel.VarDeclStatment createAlternateReceiveFromWorkers(ProcessContext cx,
+                                                                                    Stream<String> workers,
                                                                                     String varName) {
-        return receiveVarFromPeer(workers.sorted().collect(Collectors.joining(" | ")), varName);
+        AnalysisResult analysisResult = cx.analysisResult;
+        return receiveVarFromPeer(analysisResult.sortWorkers(workers).collect(Collectors.joining(" | ")), varName);
     }
 
     private static Optional<BallerinaModel.Statement> generateActivityWorker(ProcessContext cx,
@@ -148,7 +150,7 @@ public class ProcessConverter {
         }
 
         List<BallerinaModel.Statement> body = new ArrayList<>();
-        BallerinaModel.VarDeclStatment inputDecl = createAlternateReceiveFromWorkers(
+        BallerinaModel.VarDeclStatment inputDecl = createAlternateReceiveFromWorkers(cx,
                 sources.stream().map(analysisResult::from).map(AnalysisResult.LinkData::workerName), "inputVal");
         body.add(inputDecl);
         handleNoMessage(cx, inputDecl.ref(), body);
@@ -190,6 +192,7 @@ public class ProcessConverter {
                                                                           TibcoModel.Process process) {
         List<BallerinaModel.Statement> body = new ArrayList<>();
         String receiver = String.join(" | ", cx.workersWithErrorTransitions());
+
         BallerinaModel.VarDeclStatment resultDecl = receiveVarFromPeer(receiver, "result", ERROR);
         body.add(resultDecl);
 
@@ -317,7 +320,8 @@ public class ProcessConverter {
         var analysisResult = cx.analysisResult;
         Collection<TibcoModel.Scope.Flow.Activity> inputActivities = analysisResult.sources(link);
         BallerinaModel.VarDeclStatment input =
-                createAlternateReceiveFromWorkers(inputActivities.stream().map(each -> sourceWorker(cx, each)),
+                createAlternateReceiveFromWorkers(cx, inputActivities.stream()
+                                .map(each -> sourceWorker(cx, each)),
                         "inputVal");
         body.add(input);
         handleNoMessage(cx, input.ref(), body);
