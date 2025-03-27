@@ -9,6 +9,8 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
+
 public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules) {
 
     public record DefaultPackage(String org, String name, String version) {
@@ -21,13 +23,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public record TextDocument(String documentName, List<Import> imports, List<ModuleTypeDef> moduleTypeDefs,
                                List<ModuleVar> moduleVars, List<Listener> listeners, List<Service> services,
-                               List<Function> functions, List<String> Comments, List<String> intrinsics) {
+                               List<Function> functions, List<String> Comments, List<String> intrinsics,
+                               List<ModuleMemberDeclarationNode> astNodes) {
 
         public TextDocument(String documentName, List<Import> imports, List<ModuleTypeDef> moduleTypeDefs,
                             List<ModuleVar> moduleVars, List<Listener> listeners, List<Service> services,
                             List<Function> functions, List<String> comments) {
             this(documentName, imports, moduleTypeDefs, moduleVars, listeners, services, functions, comments,
-                    List.of());
+                    List.of(), List.of());
         }
     }
 

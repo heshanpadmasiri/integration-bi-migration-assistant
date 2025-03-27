@@ -224,7 +224,7 @@ public class ProjectContext {
                 .map(each -> each.body)
                 .toList();
         return new BallerinaModel.TextDocument("utils.bal", imports, List.of(), sortedConstants,
-                List.of(), List.of(), sortedFunctions, List.of(), sortedIntrinsics);
+                List.of(), List.of(), sortedFunctions, List.of(), sortedIntrinsics, List.of());
     }
 
     private BallerinaModel.TextDocument typesFile() {
@@ -240,7 +240,7 @@ public class ProjectContext {
         }
         List<BallerinaModel.Import> imports = typeCx.imports.stream().toList();
         return new BallerinaModel.TextDocument("types.bal", imports, typeDefs, List.of(), List.of(), List.of(),
-                List.of(), List.of(), typeIntrinsics);
+                List.of(), List.of(), typeIntrinsics, List.of());
     }
 
     FunctionData getProcessStartFunction(String processName) {
