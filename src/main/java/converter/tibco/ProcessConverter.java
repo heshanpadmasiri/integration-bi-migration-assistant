@@ -39,9 +39,10 @@ public class ProcessConverter {
     private ProcessConverter() {
     }
 
-    static BallerinaModel.Module convertProcesses(Collection<TibcoModel.Process> processes,
+    static BallerinaModel.Module convertProcesses(TibcoToBalConverter.ProjectConversionContext conversionContext,
+                                                  Collection<TibcoModel.Process> processes,
                                                   Collection<TibcoModel.Type.Schema> types) {
-        ProjectContext cx = new ProjectContext();
+        ProjectContext cx = new ProjectContext(conversionContext);
         record ProcessResult(TibcoModel.Process process, TypeConversionResult result) {
 
         }
@@ -139,6 +140,7 @@ public class ProcessConverter {
 
     private static Optional<BallerinaModel.Statement> generateActivityWorker(ProcessContext cx,
                                                                              TibcoModel.Scope.Flow.Activity activity) {
+
         AnalysisResult analysisResult = cx.analysisResult;
         Collection<TibcoModel.Scope.Flow.Link> sources = analysisResult.sources(activity);
         if (sources.isEmpty()) {
@@ -151,15 +153,16 @@ public class ProcessConverter {
         body.add(inputDecl);
         handleNoMessage(cx, inputDecl.ref(), body);
         BallerinaModel.Expression.FunctionCall callExpr = genereateActivityFunctionCall(cx, activity, inputDecl.ref());
+
+        String workerName = analysisResult.from(activity).workerName();
         BallerinaModel.Expression.VariableReference output =
-                handleErrorValueFromActivity(cx, activity, "output", body, callExpr);
+                handleErrorValueFromActivity(cx, workerName, "output", body, callExpr);
         addTransitionsToDestination(cx, body, activity, output);
         if (analysisResult.destinations(activity).isEmpty()) {
             BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
                     output, "function");
             body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
         }
-        String workerName = analysisResult.from(activity).workerName();
         return Optional.of(new BallerinaModel.NamedWorkerDecl(workerName, body));
     }
 
@@ -186,11 +189,7 @@ public class ProcessConverter {
     private static BallerinaModel.Statement generateWorkerForErrorHandler(ProcessContext cx,
                                                                           TibcoModel.Process process) {
         List<BallerinaModel.Statement> body = new ArrayList<>();
-        AnalysisResult analysisResult = cx.analysisResult;
-        String receiver = cx.activitiesWithErrorTransitions().stream().map(analysisResult::from)
-                .map(AnalysisResult.ActivityData::workerName)
-                .sorted()
-                .collect(Collectors.joining(" | "));
+        String receiver = String.join(" | ", cx.workersWithErrorTransitions());
         BallerinaModel.VarDeclStatment resultDecl = receiveVarFromPeer(receiver, "result", ERROR);
         body.add(resultDecl);
 
@@ -229,18 +228,18 @@ public class ProcessConverter {
         BallerinaModel.Expression.FunctionCall callExpr =
                 genereateActivityFunctionCall(cx, startActivity,
                         new BallerinaModel.Expression.VariableReference("input"));
-        var result = handleErrorValueFromActivity(cx, startActivity, "result" + index, body, callExpr);
+        var result = handleErrorValueFromActivity(cx, cx.startWorkerName, "result" + index, body, callExpr);
         addTransitionsToDestination(cx, body, startActivity, result);
     }
 
     private static BallerinaModel.Expression.VariableReference handleErrorValueFromActivity(
             ProcessContext cx,
-            TibcoModel.Scope.Flow.Activity activity,
+            String workerName,
             String resultName,
             List<BallerinaModel.Statement> body,
             BallerinaModel.Expression.FunctionCall callExpr
     ) {
-        cx.markAsPossibleErrorTransition(activity);
+        cx.markAsErrorTransition(workerName);
         BallerinaModel.VarDeclStatment resultDecl =
                 new BallerinaModel.VarDeclStatment(ActivityContext.returnType(), resultName, callExpr);
         body.add(resultDecl);
@@ -269,14 +268,7 @@ public class ProcessConverter {
                 body.add(generateSendToWorker(cx, destination.target(), value.varName()));
                 continue;
             }
-            TibcoModel.Scope.Flow.Activity.Source.Predicate predicate = destination.predicate().get();
-            if (!(predicate instanceof TibcoModel.Scope.Flow.Activity.Expression.XPath(String expression))) {
-                throw new UnsupportedOperationException("Only XPath predicates are supported");
-            }
-            String predicateTestFn = cx.getPredicateTestFunction();
-            var xPathExpr = new BallerinaModel.Expression.StringConstant(expression);
-            BallerinaModel.Expression.FunctionCall predicateTestCall = new BallerinaModel.Expression.FunctionCall(
-                    predicateTestFn, List.of(value, xPathExpr));
+            BallerinaModel.Expression.FunctionCall predicateTestCall = getPredicateCall(cx, value, destination);
             boolean hasElse = i < destinations.size() - 1 && destinations.get(i + 1).predicate().stream()
                     .anyMatch(p -> p instanceof TibcoModel.Scope.Flow.Activity.Source.Predicate.Else);
             if (!hasElse) {
@@ -290,6 +282,22 @@ public class ProcessConverter {
                         List.of(), List.of(generateSendToWorker(cx, elseDest.target(), value.varName()))));
             }
         }
+    }
+
+    private static BallerinaModel.Expression.@NotNull FunctionCall getPredicateCall(
+            ProcessContext cx,
+            BallerinaModel.Expression.VariableReference value,
+            AnalysisResult.TransitionData destination
+    ) {
+        assert destination.predicate().isPresent() : "Should only be called if we have a predicate";
+        TibcoModel.Scope.Flow.Activity.Source.Predicate predicate = destination.predicate().get();
+        if (!(predicate instanceof TibcoModel.Scope.Flow.Activity.Expression.XPath(String expression))) {
+            throw new UnsupportedOperationException("Only XPath predicates are supported");
+        }
+        String predicateTestFn = cx.getPredicateTestFunction();
+        BallerinaModel.Expression.StringConstant xPathExpr =
+                new BallerinaModel.Expression.StringConstant(ConversionUtils.escapeString(expression));
+        return new BallerinaModel.Expression.FunctionCall(predicateTestFn, List.of(value, xPathExpr));
     }
 
     private static BallerinaModel.@NotNull BallerinaStatement generateSendToWorker(
