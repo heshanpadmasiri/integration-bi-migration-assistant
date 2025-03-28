@@ -20,19 +20,19 @@ package converter.tibco;
 
 import ballerina.BallerinaModel;
 import converter.tibco.analyzer.AnalysisResult;
+import org.w3c.dom.Element;
 import tibco.TibcoModel;
 
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.List;
+
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.Element;
 
 public final class ConversionUtils {
 

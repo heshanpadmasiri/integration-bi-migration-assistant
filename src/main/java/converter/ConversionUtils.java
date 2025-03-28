@@ -1,5 +1,4 @@
 package converter;
-
 import org.w3c.dom.Element;
 
 import java.io.StringWriter;

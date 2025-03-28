@@ -1,6 +1,7 @@
 package converter.tibco;
 
 import ballerina.BallerinaModel;
+import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import tibco.TibcoModel;
 
 import java.util.Collection;
@@ -9,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-
-import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
 import static io.ballerina.xsd.core.XSDToRecord.generateNodes;
