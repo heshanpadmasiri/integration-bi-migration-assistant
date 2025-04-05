@@ -128,7 +128,7 @@ public class CodeGenerator {
             }
 
             for (String f : textDocument.intrinsics()) {
-                FunctionDefinitionNode fd = (FunctionDefinitionNode) NodeParser.parseModuleMemberDeclaration(f);
+                ModuleMemberDeclarationNode fd = NodeParser.parseModuleMemberDeclaration(f);
                 moduleMembers.add(fd);
             }
 

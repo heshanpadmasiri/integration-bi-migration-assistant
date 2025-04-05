@@ -2,6 +2,8 @@ package converter.tibco;
 
 import ballerina.BallerinaModel;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
+import io.ballerina.xsd.core.Response;
+
 import tibco.TibcoModel;
 
 import java.util.Collection;
@@ -17,6 +19,22 @@ import static io.ballerina.xsd.core.XSDToRecord.generateNodes;
 class TypeConverter {
 
     private TypeConverter() {
+    }
+
+    static void convertSchemas(ContextWithFile cx, Collection<TibcoModel.Type.Schema> schemas) {
+        String[] content = schemas.stream().map(TibcoModel.Type.Schema::element).map(ConversionUtils::elementToString)
+                .toArray(String[]::new);
+        try {
+            for (int i = 0; i < content.length; i++) {
+                cx.getProjectContext().incrementTypeCount();
+            }
+            Response result = generateNodes(content);
+            cx.addTypeDefAsIntrinsic(result.types());
+        } catch (Exception e) {
+            // FIXME:
+            String allSchemas = String.join(",\n", content);
+            throw new RuntimeException("Failed to convert types:\n" + allSchemas + "\n" + e.getMessage());
+        }
     }
 
     static void convertSchema(ContextWithFile cx, TibcoModel.Type.Schema schema) {

@@ -63,7 +63,7 @@ public class ProcessConverter {
 
     static void convertTypes(ProjectContext cx, Collection<TibcoModel.Type.Schema> schemas) {
         ContextWithFile typeContext = cx.getTypeContext();
-        schemas.forEach(schema -> TypeConverter.convertSchema(typeContext, schema));
+        TypeConverter.convertSchemas(typeContext, schemas);
     }
 
     static BallerinaModel.Module convertProcess(TibcoModel.Process process) {
@@ -148,13 +148,15 @@ public class ProcessConverter {
 
     private static TypeConversionResult convertTypes(ProcessContext cx, TibcoModel.Process process) {
         List<BallerinaModel.Service> services = new ArrayList<>();
+        Collection<TibcoModel.Type.Schema> schemas = new ArrayList<>();
         for (TibcoModel.Type type : process.types()) {
             switch (type) {
-                case TibcoModel.Type.Schema schema -> TypeConverter.convertSchema(cx, schema);
+                case TibcoModel.Type.Schema schema -> schemas.add(schema);
                 case TibcoModel.Type.WSDLDefinition wsdlDefinition ->
                         services.addAll(TypeConverter.convertWsdlDefinition(cx, wsdlDefinition));
             }
         }
+        TypeConverter.convertSchemas(cx, schemas);
         return new TypeConversionResult(services);
     }
 
