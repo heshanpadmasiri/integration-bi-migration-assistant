@@ -26,11 +26,14 @@ import tibco.TibcoModel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.BOOLEAN;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ERROR;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
@@ -80,14 +83,67 @@ public class ProcessConverter {
         List<BallerinaModel.Function> functions = cx.analysisResult.activities().stream()
                 .map(activity -> ActivityConverter.convertActivity(cx, activity))
                 .collect(Collectors.toCollection(ArrayList::new));
+        addTransitionPredicates(cx, functions);
         if (process.scope().isPresent()) {
             functions.add(generateStartFunction(cx));
-            functions.add(generateProcessFunction(cx, process));
+            functions.add(generateActivityFlowFunction(cx));
+            functions.add(generateErrorFlowFunction(cx));
+            functions.add(generateProcessFunction(cx));
         }
 
         functions.sort(Comparator.comparing(BallerinaModel.Function::methodName));
 
         return cx.serialize(result.service(), functions);
+    }
+
+    private static void addTransitionPredicates(ProcessContext cx, List<BallerinaModel.Function> accum) {
+        cx.analysisResult.activities().stream()
+                .filter(each -> each instanceof TibcoModel.Scope.Flow.Activity.ActivityWithSources)
+                .forEach(activity -> addTransitionPredicates(cx,
+                        (TibcoModel.Scope.Flow.Activity.ActivityWithSources) activity, accum));
+    }
+
+    private static void addTransitionPredicates(
+            ProcessContext cx, TibcoModel.Scope.Flow.Activity.ActivityWithSources activity,
+            List<BallerinaModel.Function> accum) {
+        BallerinaModel.Expression prev = null;
+        BallerinaModel.Expression.VariableReference value = new BallerinaModel.Expression.VariableReference("input");
+        for (TibcoModel.Scope.Flow.Activity.Source source : activity.sources()) {
+            var predicate = source.condition();
+            if (predicate.isEmpty()) {
+                continue;
+            }
+            switch (predicate.get()) {
+                case TibcoModel.Scope.Flow.Activity.Expression.XPath xPath -> {
+                    BallerinaModel.Expression expr = expr(cx, value, xPath);
+                    prev = expr;
+                    accum.add(getTransitionPredicateFn(cx, xPath, expr));
+                }
+                case TibcoModel.Scope.Flow.Activity.Source.Predicate.Else anElse -> {
+                    assert prev != null : "Should not be the first predicate";
+                    accum.add(getTransitionPredicateFn(cx, anElse, new BallerinaModel.Expression.Not(prev)));
+                }
+            }
+        }
+    }
+
+    private static BallerinaModel.Expression expr(ProcessContext cx,
+                                                  BallerinaModel.Expression.VariableReference value,
+                                                  TibcoModel.Scope.Flow.Activity.Expression.XPath predicate) {
+        String predicateTestFn = cx.getPredicateTestFunction();
+        BallerinaModel.Expression.StringConstant xPathExpr =
+                new BallerinaModel.Expression.StringConstant(ConversionUtils.escapeString(predicate.expression()));
+        return new BallerinaModel.Expression.FunctionCall(predicateTestFn, List.of(value, xPathExpr));
+    }
+
+    private static BallerinaModel.Function getTransitionPredicateFn(
+            ProcessContext cx,
+            TibcoModel.Scope.Flow.Activity.Source.Predicate predicate,
+            BallerinaModel.Expression expr
+    ) {
+        return new BallerinaModel.Function(Optional.empty(), cx.predicateFunction(predicate),
+                List.of(new BallerinaModel.Parameter(XML, "input")), Optional.of(BOOLEAN.toString()),
+                List.of(new BallerinaModel.Return<>(expr)));
     }
 
     private static TypeConversionResult convertTypes(ProcessContext cx, TibcoModel.Process process) {
@@ -104,267 +160,6 @@ public class ProcessConverter {
 
     private record TypeConversionResult(Collection<BallerinaModel.Service> service) {
 
-    }
-
-    private static String addTerminalWorkerResultCombinationStatements(
-            ProcessContext cx, List<BallerinaModel.Statement> stmts,
-            Collection<TibcoModel.Scope.Flow.Activity> endActivities) {
-        BallerinaModel.VarDeclStatment inputVarDecl =
-                createAlternateReceiveFromActivities(cx, "result", endActivities.stream());
-        stmts.add(inputVarDecl);
-        BallerinaModel.VarDeclStatment cleanInputVarDecl =
-                new BallerinaModel.VarDeclStatment(XML, "result_clean",
-                        new BallerinaModel.Expression.TernaryExpression(
-                                new BallerinaModel.Expression.TypeCheckExpression(inputVarDecl.ref(), ERROR),
-                                new BallerinaModel.Expression.XMLTemplate(""), inputVarDecl.ref()));
-        stmts.add(cleanInputVarDecl);
-        return cleanInputVarDecl.varName();
-    }
-
-    private static BallerinaModel.VarDeclStatment createAlternateReceiveFromActivities(
-            ProcessContext cx,
-            String varName,
-            Stream<TibcoModel.Scope.Flow.Activity> activities
-    ) {
-        var analysisResult = cx.analysisResult;
-        return createAlternateReceiveFromWorkers(cx,
-                activities.map(analysisResult::from).map(AnalysisResult.ActivityData::workerName), varName);
-    }
-
-    private static BallerinaModel.VarDeclStatment createAlternateReceiveFromWorkers(ProcessContext cx,
-                                                                                    Stream<String> workers,
-                                                                                    String varName) {
-        AnalysisResult analysisResult = cx.analysisResult;
-        return receiveVarFromPeer(analysisResult.sortWorkers(workers).collect(Collectors.joining(" | ")), varName);
-    }
-
-    private static Optional<BallerinaModel.Statement> generateActivityWorker(ProcessContext cx,
-                                                                             TibcoModel.Scope.Flow.Activity activity) {
-
-        AnalysisResult analysisResult = cx.analysisResult;
-        Collection<TibcoModel.Scope.Flow.Link> sources = analysisResult.sources(activity);
-        if (sources.isEmpty()) {
-            return Optional.empty();
-        }
-
-        List<BallerinaModel.Statement> body = new ArrayList<>();
-        BallerinaModel.VarDeclStatment inputDecl = createAlternateReceiveFromWorkers(cx,
-                sources.stream().map(analysisResult::from).map(AnalysisResult.LinkData::workerName), "inputVal");
-        body.add(inputDecl);
-        handleNoMessage(cx, inputDecl.ref(), body);
-        BallerinaModel.Expression.FunctionCall callExpr = genereateActivityFunctionCall(cx, activity, inputDecl.ref());
-
-        String workerName = analysisResult.from(activity).workerName();
-        BallerinaModel.Expression.VariableReference output =
-                handleErrorValueFromActivity(cx, workerName, "output", body, callExpr);
-        addTransitionsToDestination(cx, body, activity, output);
-        if (analysisResult.destinations(activity).isEmpty()) {
-            BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
-                    output, "function");
-            body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
-        }
-        return Optional.of(new BallerinaModel.NamedWorkerDecl(workerName, body));
-    }
-
-    private static void handleNoMessage(ProcessContext cx, BallerinaModel.Expression.VariableReference input,
-                                        List<BallerinaModel.Statement> body) {
-        BallerinaModel.TypeDesc.TypeReference noMessageTd =
-                new BallerinaModel.TypeDesc.TypeReference("error:NoMessage");
-        BallerinaModel.Expression.TypeCheckExpression typeCheck =
-                new BallerinaModel.Expression.TypeCheckExpression(input, noMessageTd);
-        BallerinaModel.IfElseStatement ifElse = new BallerinaModel.IfElseStatement(typeCheck,
-                List.of(new BallerinaModel.Return<>()), List.of(), List.of());
-        body.add(ifElse);
-    }
-
-    private static BallerinaModel.Expression.FunctionCall genereateActivityFunctionCall(
-            ProcessContext cx, TibcoModel.Scope.Flow.Activity activity,
-            BallerinaModel.Expression.VariableReference inputVar) {
-        AnalysisResult analysisResult = cx.analysisResult;
-        String activityFunction = analysisResult.from(activity).functionName();
-        return new BallerinaModel.Expression.FunctionCall(activityFunction,
-                new BallerinaModel.Expression[]{inputVar, cx.getContextRef()});
-    }
-
-    private static BallerinaModel.Statement generateWorkerForErrorHandler(ProcessContext cx,
-                                                                          TibcoModel.Process process) {
-        List<BallerinaModel.Statement> body = new ArrayList<>();
-        String receiver = String.join(" | ", cx.workersWithErrorTransitions());
-
-        BallerinaModel.VarDeclStatment resultDecl = receiveVarFromPeer(receiver, "result", ERROR);
-        body.add(resultDecl);
-
-        Collection<TibcoModel.Scope.Flow.Activity> startActivities =
-                cx.analysisResult.faultHandlerStartActivities(process);
-        if (startActivities.isEmpty()) {
-            body.add(new BallerinaModel.PanicStatement(resultDecl.ref()));
-        } else {
-            BallerinaModel.VarDeclStatment errorXML = new BallerinaModel.VarDeclStatment(XML, "errorXML",
-                    new BallerinaModel.Expression.XMLTemplate(
-                            "<error>${" + resultDecl.varName() + ".message()}</error>"));
-            body.add(errorXML);
-
-            startActivities
-                    .forEach(each -> addTransitionsToDestination(cx, body, each, errorXML.ref()));
-        }
-        return new BallerinaModel.NamedWorkerDecl(cx.errorHandlerWorkerName(), body);
-    }
-
-    private static BallerinaModel.Statement generateWorkerForStartActions(ProcessContext cx,
-                                                                          TibcoModel.Process process) {
-        Collection<TibcoModel.Scope.Flow.Activity> startActivities = cx.analysisResult.startActivities(process);
-        cx.startWorkerName = "start_worker";
-        List<BallerinaModel.Statement> body = new ArrayList<>();
-        int index = 0;
-        for (TibcoModel.Scope.Flow.Activity startActivity : startActivities) {
-            generateWorkerForStartActionsInner(cx, startActivity, index, body);
-            index++;
-        }
-        return new BallerinaModel.NamedWorkerDecl(cx.startWorkerName, body);
-    }
-
-    private static void generateWorkerForStartActionsInner(ProcessContext cx,
-                                                           TibcoModel.Scope.Flow.Activity startActivity,
-                                                           int index, List<BallerinaModel.Statement> body) {
-        BallerinaModel.Expression.FunctionCall callExpr =
-                genereateActivityFunctionCall(cx, startActivity,
-                        new BallerinaModel.Expression.VariableReference("input"));
-        var result = handleErrorValueFromActivity(cx, cx.startWorkerName, "result" + index, body, callExpr);
-        addTransitionsToDestination(cx, body, startActivity, result);
-    }
-
-    private static BallerinaModel.Expression.VariableReference handleErrorValueFromActivity(
-            ProcessContext cx,
-            String workerName,
-            String resultName,
-            List<BallerinaModel.Statement> body,
-            BallerinaModel.Expression.FunctionCall callExpr
-    ) {
-        cx.markAsErrorTransition(workerName);
-        BallerinaModel.VarDeclStatment resultDecl =
-                new BallerinaModel.VarDeclStatment(ActivityContext.returnType(), resultName, callExpr);
-        body.add(resultDecl);
-        BallerinaModel.Expression.VariableReference result = resultDecl.ref();
-        BallerinaModel.Expression.TypeCheckExpression typeCheck =
-                new BallerinaModel.Expression.TypeCheckExpression(result, ERROR);
-        BallerinaModel.IfElseStatement ifElse = new BallerinaModel.IfElseStatement(typeCheck,
-                List.of(
-                        new BallerinaModel.BallerinaStatement(
-                                new BallerinaModel.Action.WorkerSendAction(result,
-                                        cx.errorHandlerWorkerName()) + ";"),
-                        new BallerinaModel.Return<>()),
-                List.of(), List.of());
-        body.add(ifElse);
-        return result;
-    }
-
-    private static void addTransitionsToDestination(ProcessContext cx, List<BallerinaModel.Statement> body,
-                                                    TibcoModel.Scope.Flow.Activity activity,
-                                                    BallerinaModel.Expression.VariableReference value) {
-        AnalysisResult analysisResult = cx.analysisResult;
-        List<AnalysisResult.TransitionData> destinations = analysisResult.destinations(activity);
-        for (int i = 0; i < destinations.size(); i++) {
-            var destination = destinations.get(i);
-            if (destination.predicate().isEmpty()) {
-                body.add(generateSendToWorker(cx, destination.target(), value.varName()));
-                continue;
-            }
-            BallerinaModel.Expression.FunctionCall predicateTestCall = getPredicateCall(cx, value, destination);
-            boolean hasElse = i < destinations.size() - 1 && destinations.get(i + 1).predicate().stream()
-                    .anyMatch(p -> p instanceof TibcoModel.Scope.Flow.Activity.Source.Predicate.Else);
-            if (!hasElse) {
-                body.add(new BallerinaModel.IfElseStatement(predicateTestCall,
-                        List.of(generateSendToWorker(cx, destination.target(), value.varName())), List.of(),
-                        List.of()));
-            } else {
-                var elseDest = destinations.get(++i);
-                body.add(new BallerinaModel.IfElseStatement(predicateTestCall,
-                        List.of(generateSendToWorker(cx, destination.target(), value.varName())),
-                        List.of(), List.of(generateSendToWorker(cx, elseDest.target(), value.varName()))));
-            }
-        }
-    }
-
-    private static BallerinaModel.Expression.@NotNull FunctionCall getPredicateCall(
-            ProcessContext cx,
-            BallerinaModel.Expression.VariableReference value,
-            AnalysisResult.TransitionData destination
-    ) {
-        assert destination.predicate().isPresent() : "Should only be called if we have a predicate";
-        TibcoModel.Scope.Flow.Activity.Source.Predicate predicate = destination.predicate().get();
-        if (!(predicate instanceof TibcoModel.Scope.Flow.Activity.Expression.XPath(String expression))) {
-            throw new UnsupportedOperationException("Only XPath predicates are supported");
-        }
-        String predicateTestFn = cx.getPredicateTestFunction();
-        BallerinaModel.Expression.StringConstant xPathExpr =
-                new BallerinaModel.Expression.StringConstant(ConversionUtils.escapeString(expression));
-        return new BallerinaModel.Expression.FunctionCall(predicateTestFn, List.of(value, xPathExpr));
-    }
-
-    private static BallerinaModel.@NotNull BallerinaStatement generateSendToWorker(
-            ProcessContext cx,
-            TibcoModel.Scope.Flow.Link destinationLink,
-            String variable) {
-        AnalysisResult analysisResult = cx.analysisResult;
-        AnalysisResult.LinkData linkData = analysisResult.from(destinationLink);
-        BallerinaModel.Action.WorkerSendAction sendAction = new BallerinaModel.Action.WorkerSendAction(
-                new BallerinaModel.Expression.VariableReference(variable), linkData.workerName());
-        return new BallerinaModel.BallerinaStatement(sendAction + ";");
-    }
-
-    private static BallerinaModel.Statement generateLink(ProcessContext cx,
-                                                         TibcoModel.Scope.Flow.Link link) {
-        List<BallerinaModel.Statement> body = new ArrayList<>();
-        var analysisResult = cx.analysisResult;
-        Collection<TibcoModel.Scope.Flow.Activity> inputActivities = analysisResult.sources(link);
-        BallerinaModel.VarDeclStatment input =
-                createAlternateReceiveFromWorkers(cx, inputActivities.stream()
-                                .map(each -> sourceWorker(cx, each)),
-                        "inputVal");
-        body.add(input);
-        handleNoMessage(cx, input.ref(), body);
-        AnalysisResult.LinkData linkData = analysisResult.from(link);
-        for (TibcoModel.Scope.Flow.Activity destinations : analysisResult.destinations(link)) {
-            AnalysisResult.ActivityData activityData = analysisResult.from(destinations);
-            String activityWorker = activityData.workerName();
-            BallerinaModel.Action.WorkerSendAction sendAction =
-                    new BallerinaModel.Action.WorkerSendAction(input.ref(), activityWorker);
-            body.add(new BallerinaModel.BallerinaStatement(sendAction + ";"));
-        }
-        return new BallerinaModel.NamedWorkerDecl(linkData.workerName(), body);
-    }
-
-    private static String sourceWorker(ProcessContext cx, TibcoModel.Scope.Flow.Activity activity) {
-        var analysisResult = cx.analysisResult;
-        if (analysisResult.startActivities(cx.process).contains(activity)) {
-            return cx.startWorkerName;
-        }
-        if (analysisResult.faultHandlerStartActivities(cx.process).contains(activity)) {
-            return cx.errorHandlerWorkerName();
-        }
-        return analysisResult.from(activity).workerName();
-    }
-
-    private static BallerinaModel.Expression.VariableReference addReceiveFromPeerStatement(
-            String peer,
-            String inputVarName,
-            List<BallerinaModel.Statement> body
-    ) {
-        BallerinaModel.VarDeclStatment inputVarDecl = receiveVarFromPeer(peer, inputVarName);
-        body.add(inputVarDecl);
-        return inputVarDecl.ref();
-    }
-
-    private static BallerinaModel.VarDeclStatment receiveVarFromPeer(String peer, String inputVarName) {
-        BallerinaModel.TypeDesc.UnionTypeDesc receiveType = new BallerinaModel.TypeDesc.UnionTypeDesc(List.of(
-                new BallerinaModel.TypeDesc.TypeReference("error:NoMessage"), XML));
-        return receiveVarFromPeer(peer, inputVarName, receiveType);
-    }
-
-    private static BallerinaModel.@NotNull VarDeclStatment receiveVarFromPeer(String peer, String inputVarName,
-                                                                              BallerinaModel.TypeDesc receiveType) {
-        BallerinaModel.Action.WorkerReceiveAction receiveEvent = new BallerinaModel.Action.WorkerReceiveAction(peer);
-        return new BallerinaModel.VarDeclStatment(receiveType, inputVarName, receiveEvent);
     }
 
     private static BallerinaModel.Function generateStartFunction(ProcessContext cx) {
@@ -400,30 +195,151 @@ public class ProcessConverter {
                 body);
     }
 
-    private static BallerinaModel.Function generateProcessFunction(ProcessContext cx,
-                                                                   TibcoModel.Process process) {
+    private static BallerinaModel.Function generateProcessFunction(ProcessContext cx) {
         String name = cx.getProcessFunction();
-        AnalysisResult analysisResult = cx.analysisResult;
         List<BallerinaModel.Statement> body = new ArrayList<>();
-        body.add(cx.initContextVar());
+        BallerinaModel.VarDeclStatment context = cx.initContextVar();
+        body.add(context);
         String addToContextFn = cx.getAddToContextFn();
+        BallerinaModel.Expression.VariableReference input = new BallerinaModel.Expression.VariableReference("input");
         body.add(new BallerinaModel.CallStatement(
                 new BallerinaModel.Expression.FunctionCall(addToContextFn, List.of(cx.contextVarRef(),
                         new BallerinaModel.Expression.StringConstant("post.item"),
-                        new BallerinaModel.Expression.VariableReference("input")))));
-        body.add(generateWorkerForStartActions(cx, process));
-        analysisResult.links().stream().sorted(Comparator.comparing(link -> analysisResult.from(link).workerName()))
-                .map(link -> generateLink(cx, link)).forEach(body::add);
-        analysisResult.activities().stream()
-                .sorted(Comparator.comparing(activity -> analysisResult.from(activity).workerName()))
-                .map(activity -> generateActivityWorker(cx, activity))
-                .filter(Optional::isPresent).map(Optional::get).forEach(body::add);
-        body.add(generateWorkerForErrorHandler(cx, process));
-        String resultVariableName =
-                addTerminalWorkerResultCombinationStatements(cx, body, analysisResult.endActivities(process));
-        body.add(new BallerinaModel.Return<>(new BallerinaModel.Expression.VariableReference(resultVariableName)));
+                        input))));
+        BallerinaModel.VarDeclStatment result = new BallerinaModel.VarDeclStatment(
+                BallerinaModel.TypeDesc.UnionTypeDesc.of(XML, ERROR), "result",
+                new BallerinaModel.Expression.FunctionCall(cx.getActivityRunnerFunction(),
+                        List.of(input, context.ref())));
+        body.add(result);
+        handleErrorResult(cx, result, context, body);
+        body.add(new BallerinaModel.Return<>(result.ref()));
         return new BallerinaModel.Function(Optional.empty(), name,
                 List.of(new BallerinaModel.Parameter(XML, "input")), Optional.of(XML.toString()), body);
     }
 
+    private static void handleErrorResult(ProcessContext cx, BallerinaModel.VarDeclStatment result,
+                                          BallerinaModel.VarDeclStatment context, List<BallerinaModel.Statement> body) {
+        BallerinaModel.Expression.TypeCheckExpression typeCheck =
+                new BallerinaModel.Expression.TypeCheckExpression(result.ref(), ERROR);
+        BallerinaModel.IfElseStatement ifElse = new BallerinaModel.IfElseStatement(typeCheck,
+                List.of(new BallerinaModel.Return<>(
+                        new BallerinaModel.Expression.FunctionCall(cx.getErrorHandlerFunction(),
+                                List.of(result.ref(), context.ref())))),
+                List.of(), List.of());
+        body.add(ifElse);
+    }
+
+    private static BallerinaModel.Function generateActivityFlowFunction(ProcessContext cx) {
+        AnalysisResult analysisResult = cx.analysisResult;
+        List<TibcoModel.Scope.Flow.Activity> activities = analysisResult.sortedActivities(cx.process).toList();
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        BallerinaModel.Expression.VariableReference result =
+                generateActivityFlowFunctionInner(cx, activities, BallerinaModel.Expression.Check::new, body,
+                        new BallerinaModel.Expression.VariableReference("input"));
+        body.add(new BallerinaModel.Return<>(result));
+        return new BallerinaModel.Function(Optional.empty(), cx.getActivityRunnerFunction(),
+                List.of(new BallerinaModel.Parameter(XML, "input"),
+                        new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(XML), "cx")),
+                Optional.of(BallerinaModel.TypeDesc.UnionTypeDesc.of(XML, ERROR).toString()), body);
+    }
+
+    private static BallerinaModel.Function generateErrorFlowFunction(ProcessContext cx) {
+        AnalysisResult analysisResult = cx.analysisResult;
+        List<TibcoModel.Scope.Flow.Activity> activities =
+                analysisResult.sortedFaultHandlerActivities(cx.process).toList();
+
+        List<BallerinaModel.Statement> body = new ArrayList<>();
+        if (activities.isEmpty()) {
+            body.add(new BallerinaModel.BallerinaStatement(
+                    new BallerinaModel.Expression.CheckPanic(
+                            new BallerinaModel.Expression.VariableReference("err")) + ";\n"));
+        } else {
+            BallerinaModel.VarDeclStatment input = new BallerinaModel.VarDeclStatment(XML, "input",
+                    new BallerinaModel.Expression.XMLTemplate(""));
+            body.add(input);
+            BallerinaModel.Expression.VariableReference
+                    result =
+                    generateActivityFlowFunctionInner(cx, activities, BallerinaModel.Expression.CheckPanic::new, body,
+                            input.ref());
+            body.add(new BallerinaModel.Return<>(result));
+
+        }
+        return new BallerinaModel.Function(Optional.empty(), cx.getErrorHandlerFunction(),
+                List.of(new BallerinaModel.Parameter(ERROR, "err"), new BallerinaModel.Parameter(
+                        new BallerinaModel.TypeDesc.MapTypeDesc(XML), "cx")),
+                Optional.of(XML.toString()), body);
+    }
+
+    private static BallerinaModel.Expression.VariableReference generateActivityFlowFunctionInner(
+            ProcessContext cx,
+            List<TibcoModel.Scope.Flow.Activity> activities,
+            Function<BallerinaModel.Expression.FunctionCall, BallerinaModel.Expression> callHandler,
+            List<BallerinaModel.Statement> body, BallerinaModel.Expression.VariableReference input
+    ) {
+        BallerinaModel.Expression.VariableReference context = new BallerinaModel.Expression.VariableReference("cx");
+        Map<TibcoModel.Scope.Flow.Activity, BallerinaModel.Expression.VariableReference> activityResult =
+                new HashMap<>();
+        for (int i = 0; i < activities.size(); i++) {
+            TibcoModel.Scope.Flow.Activity activity = activities.get(i);
+            BallerinaModel.VarDeclStatment result =
+                    generateActivityFunctionCall(cx, activityResult, activity, "result" + i, callHandler, body, input,
+                            context);
+            activityResult.put(activity, result.ref());
+            input = result.ref();
+        }
+        return input;
+    }
+
+    private static BallerinaModel.VarDeclStatment generateActivityFunctionCall(
+            ProcessContext cx,
+            Map<TibcoModel.Scope.Flow.Activity, BallerinaModel.Expression.VariableReference> activityResults,
+            TibcoModel.Scope.Flow.Activity activity, String varName,
+            Function<BallerinaModel.Expression.FunctionCall, BallerinaModel.Expression> callHandler,
+            List<BallerinaModel.Statement> body,
+            BallerinaModel.Expression.VariableReference input, BallerinaModel.Expression.VariableReference context) {
+        AnalysisResult analysisResult = cx.analysisResult;
+        record TransitionFunctionData(BallerinaModel.Expression.VariableReference inputVar, String functionName) {
+
+        }
+        List<BallerinaModel.Expression.FunctionCall> predicates = analysisResult.transitionConditions(activity)
+                .map(data -> new TransitionFunctionData(activityResults.get(data.activity()), cx.predicateFunction(
+                        data.predicate())))
+                .map(data -> new BallerinaModel.Expression.FunctionCall(data.functionName, List.of(data.inputVar)))
+                .toList();
+
+        if (predicates.isEmpty()) {
+            BallerinaModel.VarDeclStatment result =
+                    activityFunctionCallResult(activity, varName, callHandler, input, context, analysisResult);
+            body.add(result);
+            return result;
+        }
+
+        BallerinaModel.VarDeclStatment result = new BallerinaModel.VarDeclStatment(XML, varName);
+        body.add(result);
+        BallerinaModel.Expression cond = predicates.getFirst();
+        for (int i = 1; i < predicates.size(); i++) {
+            cond = new BallerinaModel.Expression.BinaryLogical(cond, predicates.get(i),
+                    BallerinaModel.Expression.BinaryLogical.Operator.OR);
+        }
+        BallerinaModel.IfElseStatement ifElse = new BallerinaModel.IfElseStatement(cond,
+                List.of(new BallerinaModel.VarAssignStatement(result.ref(),
+                        new BallerinaModel.Expression.Check(new BallerinaModel.Expression.FunctionCall(
+                                analysisResult.from(activity).functionName(), List.of(input, context))))),
+                List.of(), List.of(new BallerinaModel.VarAssignStatement(result.ref(), input)));
+        body.add(ifElse);
+        return result;
+    }
+
+    private static BallerinaModel.@NotNull VarDeclStatment activityFunctionCallResult(
+            TibcoModel.Scope.Flow.Activity activity,
+            String varName,
+            Function<BallerinaModel.Expression.FunctionCall, BallerinaModel.Expression> callHandler,
+            BallerinaModel.Expression.VariableReference input,
+            BallerinaModel.Expression.VariableReference context,
+            AnalysisResult analysisResult) {
+        BallerinaModel.Expression.FunctionCall callExpr =
+                new BallerinaModel.Expression.FunctionCall(
+                        analysisResult.from(activity).functionName(), List.of(input, context));
+        return new BallerinaModel.VarDeclStatment(XML, varName, callHandler.apply(callExpr));
+    }
 }

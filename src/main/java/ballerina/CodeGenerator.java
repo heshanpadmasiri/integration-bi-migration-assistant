@@ -242,6 +242,13 @@ public class CodeGenerator {
                                     String.join("", elseIfClause.elseIfBody().stream()
                                             .map(CodeGenerator::constructBallerinaStatements).toList())));
                 }
+                if (ifElseStmt.elseBody().isEmpty()) {
+                    yield String.format("if (%s) { %s } %s",
+                            ifElseStmt.ifCondition(),
+                            String.join("", ifElseStmt.ifBody().stream()
+                                    .map(CodeGenerator::constructBallerinaStatements).toList()),
+                            stringBuilder);
+                }
 
                 yield String.format("if (%s) { %s } %s else { %s }",
                         ifElseStmt.ifCondition(),

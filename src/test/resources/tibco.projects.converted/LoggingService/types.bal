@@ -1,3 +1,5 @@
+import ballerina/data.xmldata;
+
 @xmldata:Namespace {uri: "http://www.tibco.com/pe/EngineTypes"}
 public type anydatarecord {|@xmldata:Sequence {minOccurs:1,maxOccurs:1}SequenceGroup4 sequenceGroup4;|};
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/palette/internal/activityerror+bw.xml.renderxml"}
@@ -542,26 +544,20 @@ public type RenameActivityOutput1 record {|
     SequenceGroup23 sequenceGroup23;
 |};
 
-@xmldata:Namespace {uri: "http://www.example.org/LogSchema"}
+@xmldata:Namespace {uri: "http://www.tibco.com/xml/render/example"}
 public type SequenceGroup record {|
-    @xmldata:Namespace {uri: "http://www.example.org/LogSchema"}
+    @xmldata:Namespace {uri: "http://www.tibco.com/xml/render/example"}
     @xmldata:SequenceOrder {value: 1}
     string level;
-    @xmldata:Namespace {uri: "http://www.example.org/LogSchema"}
+    @xmldata:Namespace {uri: "http://www.tibco.com/xml/render/example"}
     @xmldata:SequenceOrder {value: 2}
-    string formatter?;
-    @xmldata:Namespace {uri: "http://www.example.org/LogSchema"}
-    @xmldata:SequenceOrder {value: 3}
     string message;
-    @xmldata:Namespace {uri: "http://www.example.org/LogSchema"}
+    @xmldata:Namespace {uri: "http://www.tibco.com/xml/render/example"}
+    @xmldata:SequenceOrder {value: 3}
+    string logger;
+    @xmldata:Namespace {uri: "http://www.tibco.com/xml/render/example"}
     @xmldata:SequenceOrder {value: 4}
-    string msgCode;
-    @xmldata:Namespace {uri: "http://www.example.org/LogSchema"}
-    @xmldata:SequenceOrder {value: 5}
-    string loggerName?;
-    @xmldata:Namespace {uri: "http://www.example.org/LogSchema"}
-    @xmldata:SequenceOrder {value: 6}
-    string handler?;
+    string timestamp;
 |};
 
 @xmldata:Namespace {uri: "http://schemas.tibco.com/bw/plugins/xml/5.0/xmlExceptions"}
@@ -1076,11 +1072,3 @@ public type xmlBytes record {|
 public type xmlString record {|
     string \#content;
 |};
-
-type result anydata;
-
-type LogMessage anydata;
-
-type LogParametersType anydata;
-
-type WriteActivityInputTextClass anydata;

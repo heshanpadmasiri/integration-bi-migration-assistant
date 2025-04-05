@@ -1,3 +1,5 @@
+import ballerina/data.xmldata;
+
 @xmldata:Namespace {uri: "http://www.tibco.com/pe/EngineTypes"}
 public type anydatarecord {|@xmldata:Sequence {minOccurs:1,maxOccurs:1}SequenceGroup4 sequenceGroup4;|};
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/palette/internal/activityerror+bw.restjson.JsonRender"}
@@ -472,20 +474,38 @@ public type SecurityContextType record {|
     UsernamePasswordToken UsernamePasswordToken;
 |};
 
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type SequenceGroup record {|
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 1}
-    string dob;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+    string Accept?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 2}
-    string firstName;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+    string Accept_Charset?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 3}
-    string lastName;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+    string Accept_Encoding?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 4}
-    string ssn;
+    string Content_Type?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 5}
+    string Content_Length?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 6}
+    string Connection?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 7}
+    string Cookie?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 8}
+    string Pragma?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 9}
+    string Authorization?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 10}
+    dynamicHeadersType DynamicHeaders?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
@@ -788,10 +808,6 @@ public type statusLineType record {|
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type tmessageBody string;
 
-type ExperianResponseSchemaElement anydata;
-
 type QueryData0 record {
     string ssn;
 };
-
-type InputElement anydata;

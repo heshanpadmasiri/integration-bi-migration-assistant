@@ -366,6 +366,37 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
 
     public sealed interface Expression {
 
+        record Not(Expression expression) implements Expression {
+
+            @Override
+            public String toString() {
+                return "!" + expression;
+            }
+        }
+
+        record BinaryLogical(Expression left, Expression right, Operator operator) implements Expression {
+
+            @Override
+            public String toString() {
+                return left + " " + operator + " " + right;
+            }
+
+            public enum Operator {
+                AND("&&"), OR("||");
+
+                private final String symbol;
+
+                Operator(String symbol) {
+                    this.symbol = symbol;
+                }
+
+                @Override
+                public String toString() {
+                    return symbol;
+                }
+            }
+        }
+
         record TypeCast(TypeDesc typeDesc, Expression expression) implements Expression {
 
             @Override
@@ -575,11 +606,20 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
         }
     }
 
-    public record VarDeclStatment(TypeDesc type, String varName, Expression expr) implements Statement {
+    public record VarDeclStatment(TypeDesc type, String varName, Optional<Expression> expr) implements Statement {
+
+        public VarDeclStatment(TypeDesc type, String varName) {
+            this(type, varName, Optional.empty());
+        }
+
+        public VarDeclStatment(TypeDesc type, String varName, Expression expr) {
+            this(type, varName, Optional.of(expr));
+        }
 
         @Override
         public String toString() {
-            return type + " " + varName + " = " + expr + ";";
+            return expr.map(expression -> type + " " + varName + " = " + expression + ";")
+                    .orElseGet(() -> type + " " + varName + ";");
         }
 
         public Expression.VariableReference ref() {

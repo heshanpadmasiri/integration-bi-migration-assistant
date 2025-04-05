@@ -1,3 +1,5 @@
+import ballerina/data.xmldata;
+
 @xmldata:Namespace {uri: "http://www.tibco.com/pe/EngineTypes"}
 public type anydatarecord {|@xmldata:Sequence {minOccurs:1,maxOccurs:1}SequenceGroup4 sequenceGroup4;|};
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/palette/internal/activityerror+44ece17e-f278-4255-b693-65bb9cf58bca"}
@@ -348,31 +350,25 @@ public type RequestActivityOutput1 record {|
     SequenceGroup4 sequenceGroup4;
 |};
 
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/parameters"}
 public type SequenceGroup record {|
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/parameters"}
     @xmldata:SequenceOrder {value: 1}
-    int FICOScore?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-    @xmldata:SequenceOrder {value: 2}
-    int NoOfInquiries?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-    @xmldata:SequenceOrder {value: 3}
-    string Rating?;
+    string \#content;
 |};
 
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+@xmldata:Namespace {uri: "http://xmlns.example.com/Creditscore/parameters"}
 public type SequenceGroup1 record {|
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:Namespace {uri: "http://xmlns.example.com/Creditscore/parameters"}
     @xmldata:SequenceOrder {value: 1}
     string DOB?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:Namespace {uri: "http://xmlns.example.com/Creditscore/parameters"}
     @xmldata:SequenceOrder {value: 2}
     string FirstName?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:Namespace {uri: "http://xmlns.example.com/Creditscore/parameters"}
     @xmldata:SequenceOrder {value: 3}
     string LastName?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:Namespace {uri: "http://xmlns.example.com/Creditscore/parameters"}
     @xmldata:SequenceOrder {value: 4}
     string SSN?;
 |};
@@ -495,7 +491,7 @@ public type creditscoreGetParameters record {|
     SequenceGroup1 sequenceGroup1;
 |};
 
-@xmldata:Namespace {uri: "http://xmlns.example.com/y54cuadtcxtfstqs3rux2gfdaxppoqgc/parameters"}
+@xmldata:Namespace {uri: "http://xmlns.example.com/Creditscore/parameters"}
 public type creditscorePostParameters record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
     SequenceGroup sequenceGroup;
@@ -641,8 +637,6 @@ public type statusLineType record {|
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type tmessageBody string;
 
-type ExperianResponseSchemaElement anydata;
-
 type HTTPRequestConfig record {
     string Method;
     string RequestURI;
@@ -650,12 +644,6 @@ type HTTPRequestConfig record {
     map<string> Headers = {};
     map<string> parameters = {};
 };
-
-type SuccessSchema anydata;
-
-type GiveNewSchemaNameHere anydata;
-
-type CreditScoreSuccessSchema anydata;
 
 function getRequestPath(HTTPRequestConfig config) returns string {
     string base = config.RequestURI;

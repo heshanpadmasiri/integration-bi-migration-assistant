@@ -1,3 +1,5 @@
+import ballerina/data.xmldata;
+
 @xmldata:Namespace {uri: "http://www.tibco.com/pe/EngineTypes"}
 public type anydatarecord {|@xmldata:Sequence {minOccurs:1,maxOccurs:1}SequenceGroup4 sequenceGroup4;|};
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/palette/internal/activityerror+bw.jdbc.update"}
@@ -265,66 +267,27 @@ public type Response record {|
     SequenceGroup sequenceGroup;
 |};
 
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
 public type SequenceGroup record {|
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
     @xmldata:SequenceOrder {value: 1}
-    string Accept?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 2}
-    string Accept_Charset?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 3}
-    string Accept_Encoding?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 4}
-    string Content_Type?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 5}
-    string Content_Length?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 6}
-    string Connection?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 7}
-    string Cookie?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 8}
-    string Pragma?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 9}
-    string Authorization?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 10}
-    dynamicHeadersType DynamicHeaders?;
+    string ssn;
 |};
 
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
 public type SequenceGroup1 record {|
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
     @xmldata:SequenceOrder {value: 1}
-    string Content_Length?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    string SSN?;
+    @xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
     @xmldata:SequenceOrder {value: 2}
-    string Connection?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    string FirstName?;
+    @xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
     @xmldata:SequenceOrder {value: 3}
-    string Pragma?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    string LastName?;
+    @xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
     @xmldata:SequenceOrder {value: 4}
-    string StatusLine?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 5}
-    string Location?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 6}
-    string Set_Cookie?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 7}
-    string Content_Type?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 8}
-    dynamicHeadersType DynamicHeaders?;
+    string DOB?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
@@ -597,12 +560,6 @@ public type unknownResultset record {|
     SequenceGroup6 sequenceGroup6;
 |};
 
-type Response anydata;
-
-type Element anydata;
-
-type Request anydata;
-
 type QueryData1 record {
     int noOfPulls;
     string ssn;
@@ -611,7 +568,3 @@ type QueryData1 record {
 type QueryData0 record {
     string ssn;
 };
-
-type httpHeaders anydata;
-
-type LogParametersType anydata;
