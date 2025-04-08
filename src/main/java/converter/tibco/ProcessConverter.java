@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.ballerina.compiler.syntax.tree.ModulePartNode;
+
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.BOOLEAN;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ERROR;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
@@ -43,7 +45,7 @@ public class ProcessConverter {
     private ProcessConverter() {
     }
 
-    static BallerinaModel.Module convertProject(
+    static ConversionResult convertProject(
             TibcoToBalConverter.ProjectConversionContext conversionContext,
             Collection<TibcoModel.Process> processes,
             Collection<TibcoModel.Type.Schema> types,
@@ -59,13 +61,13 @@ public class ProcessConverter {
         List<ProcessResult> results =
                 processes.stream().map(process -> new ProcessResult(process,
                         convertTypes(cx.getProcessContext(process), process))).toList();
-        convertTypes(cx, types);
+        var typeAST = convertTypes(cx, types);
         // We need to ensure all the type definitions have been processed before we start processing the functions
         List<BallerinaModel.TextDocument> textDocuments = results.stream().map(result -> {
             TibcoModel.Process process = result.process();
             return convertBody(cx.getProcessContext(process), process, result.result());
         }).toList();
-        return cx.serialize(textDocuments);
+        return new ConversionResult(cx.serialize(textDocuments), typeAST);
     }
 
     private static void convertResources(ProjectContext cx, Collection<TibcoModel.Resource.JDBCResource> jdbcResources,
@@ -82,9 +84,9 @@ public class ProcessConverter {
         }
     }
 
-    static void convertTypes(ProjectContext cx, Collection<TibcoModel.Type.Schema> schemas) {
+    static ModulePartNode convertTypes(ProjectContext cx, Collection<TibcoModel.Type.Schema> schemas) {
         ContextWithFile typeContext = cx.getTypeContext();
-        TypeConverter.convertSchemas(typeContext, schemas);
+        return TypeConverter.convertSchemas(typeContext, schemas);
     }
 
     static BallerinaModel.Module convertProcess(TibcoModel.Process process) {
@@ -180,11 +182,10 @@ public class ProcessConverter {
                         services.addAll(TypeConverter.convertWsdlDefinition(cx, wsdlDefinition));
             }
         }
-        TypeConverter.convertSchemas(cx, schemas);
-        return new TypeConversionResult(services);
+        return new TypeConversionResult(services, TypeConverter.convertSchemas(cx, schemas));
     }
 
-    private record TypeConversionResult(Collection<BallerinaModel.Service> service) {
+    private record TypeConversionResult(Collection<BallerinaModel.Service> service, ModulePartNode typesAst) {
 
     }
 

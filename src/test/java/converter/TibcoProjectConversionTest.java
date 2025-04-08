@@ -100,7 +100,7 @@ public class TibcoProjectConversionTest {
     }
 
     private void compareFiles(Path actual, Path expected) throws IOException {
-        if (actual.endsWith("types.bal")) {
+        if (actual.endsWith("types_gen.bal")) {
             // Skip comparing types.bal files, we are generating these using the xsd tool and they are indeterministic.
             return;
         }

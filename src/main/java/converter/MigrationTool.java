@@ -2,9 +2,13 @@ package converter;
 
 import ballerina.BallerinaModel;
 import ballerina.CodeGenerator;
+import converter.tibco.ConversionResult;
 import converter.tibco.TibcoToBalConverter;
 import io.ballerina.cli.cmd.NewCommand;
+import io.ballerina.compiler.syntax.tree.ModulePartNode;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
+import io.ballerina.tools.text.TextDocuments;
+
 import picocli.CommandLine;
 
 import java.io.File;
@@ -88,14 +92,19 @@ public class MigrationTool {
             System.exit(1);
         }
         TibcoToBalConverter.ProjectConversionContext cx = new TibcoToBalConverter.ProjectConversionContext();
-        BallerinaModel.Module module = TibcoToBalConverter.convertProject(cx, projectPath);
+        ConversionResult result = TibcoToBalConverter.convertProject(cx, projectPath);
         BallerinaModel.DefaultPackage balPackage = new BallerinaModel.DefaultPackage("tibco", "sample", "0.1");
-        for (BallerinaModel.TextDocument textDocument : module.textDocuments()) {
+        for (BallerinaModel.TextDocument textDocument : result.module().textDocuments()) {
             try {
-                writeTextDocument(module, balPackage, textDocument, targetDir);
+                writeTextDocument(result.module(), balPackage, textDocument, targetDir);
             } catch (IOException e) {
                 logger.log(Level.SEVERE, "Failed to create output file" + textDocument.documentName(), e);
             }
+        }
+        try {
+            writeASTToFile(targetDir, "types_gen.bal", from(result.typesAST()));
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error writing types_gen.bal", e);
         }
         try {
             addProjectArtifacts(cx, targetPath);
@@ -104,12 +113,23 @@ public class MigrationTool {
         }
     }
 
+    private static SyntaxTree from(ModulePartNode modulePartNode) {
+        SyntaxTree syntaxTree = SyntaxTree.from(TextDocuments.from(""));
+        syntaxTree = syntaxTree.modifyWith(modulePartNode);
+        return CodeGenerator.formatSyntaxTree(syntaxTree);
+    }
+
     private static void writeTextDocument(BallerinaModel.Module module, BallerinaModel.DefaultPackage balPackage,
             BallerinaModel.TextDocument textDocument, Path targetDir) throws IOException {
         BallerinaModel.Module tmpModule = new BallerinaModel.Module(module.name(), List.of(textDocument));
         BallerinaModel ballerinaModel = new BallerinaModel(balPackage, List.of(tmpModule));
+        String fileName = textDocument.documentName();
         SyntaxTree st = new CodeGenerator(ballerinaModel).generateBalCode();
-        Path filePath = Path.of(targetDir + "/" + textDocument.documentName());
+        writeASTToFile(targetDir, fileName, st);
+    }
+
+    private static void writeASTToFile(Path targetDir, String fileName, SyntaxTree st) throws IOException {
+        Path filePath = Path.of(targetDir + "/" + fileName);
         Files.writeString(filePath, st.toSourceCode());
     }
 
