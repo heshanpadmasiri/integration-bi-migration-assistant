@@ -253,6 +253,10 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             return new ModuleVar(name, typeDesc.toString(), expr, true, true);
         }
 
+        public static ModuleVar configurable(String name, TypeDesc typeDesc) {
+            return new ModuleVar(name, typeDesc.toString(), new BallerinaExpression("?"), true, true);
+        }
+
         public ModuleVar(String name, TypeDesc type, BallerinaExpression expr) {
             this(name, type.toString(), expr);
         }
@@ -426,6 +430,14 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             @Override
             public String toString() {
                 return "xml`" + body() + "`";
+            }
+        }
+
+        record StringTemplate(String body) implements Expression {
+
+            @Override
+            public String toString() {
+                return "string`" + body() + "`";
             }
         }
 

@@ -240,7 +240,7 @@ class ActivityConverter {
         BallerinaModel.Expression.VariableReference query = new BallerinaModel.Expression.VariableReference(
                 queryDecl.varName());
 
-        BallerinaModel.Expression.VariableReference dbClient = cx.dbClient(sql.sharedResourcePropertyName());
+        BallerinaModel.Expression.VariableReference dbClient = cx.client(sql.sharedResourcePropertyName());
         BallerinaModel.TypeDesc executionResultType = cx.processContext.getTypeByName("sql:ExecutionResult");
         BallerinaModel.VarDeclStatment result =
                 new BallerinaModel.VarDeclStatment(executionResultType, cx.getAnnonVarName(),
@@ -282,10 +282,7 @@ class ActivityConverter {
         body.add(configVarDecl);
         BallerinaModel.Expression.VariableReference configVarRef =
                 new BallerinaModel.Expression.VariableReference(configVarDecl.varName());
-
-        BallerinaModel.Expression.VariableReference configurableHost = cx.addConfigurableVariable(STRING, "host");
-        BallerinaModel.VarDeclStatment client = createHTTPClientWithBasePath(cx, configurableHost);
-        body.add(client);
+        BallerinaModel.Expression.VariableReference client = cx.client(httpSend.httpClientResource());
 
         BallerinaModel.Expression.FunctionCall pathGetFunctionCall =
                 new BallerinaModel.Expression.FunctionCall(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG.name,
@@ -450,12 +447,27 @@ class ActivityConverter {
         String stylesheetTransformer = cx.getTransformXSLTFn();
         BallerinaModel.Expression.FunctionCall transformerCall =
                 new BallerinaModel.Expression.FunctionCall(stylesheetTransformer,
-                        List.of(new BallerinaModel.Expression.XMLTemplate(xslt.expression())));
+                        List.of(new BallerinaModel.Expression.XMLTemplate(
+                                replaceVariableReferences(cx, xslt.expression()))));
         BallerinaModel.Expression.FunctionCall callExpr = new BallerinaModel.Expression.FunctionCall("xslt:transform",
                 new BallerinaModel.Expression[]{inputVariable,
                         transformerCall, cx.contextVarRef()});
         return new BallerinaModel.VarDeclStatment(XML, cx.getAnnonVarName(),
                 new BallerinaModel.Expression.Check(callExpr));
+    }
+
+    private static String replaceVariableReferences(ActivityContext cx, String expression) {
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("bw:getModuleProperty\\('([^']+)'\\)");
+        java.util.regex.Matcher matcher = pattern.matcher(expression);
+        StringBuilder result = new StringBuilder();
+
+        while (matcher.find()) {
+            String propertyName = matcher.group(1);
+            String configVarName = cx.getConfigVarName(propertyName);
+            matcher.appendReplacement(result, "\\$\\{" + configVarName + "\\}");
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
 
     private static BallerinaModel.Statement addToContext(ActivityContext cx,
