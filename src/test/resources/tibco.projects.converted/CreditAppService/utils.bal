@@ -40,6 +40,36 @@ function addToContext(map<xml> context, string varName, xml value) {
     context[varName] = transformed;
 }
 
+function getRequestPath(HTTPRequestConfig config) returns string {
+    string base = config.RequestURI;
+    if (config.parameters.length() == 0) {
+        return base;
+    }
+    return base + "?" + "&".'join(...from string key in config.parameters.keys()
+        select key + "=" + config.parameters.get(key));
+}
+
+function httpCall(HTTPRequestConfig config, http:Client 'client) returns json|error {
+    string requestPath = getRequestPath(config);
+    match config.Method {
+        "GET" => {
+            return checkpanic 'client->get(requestPath, config.Headers);
+        }
+        "POST" => {
+            return checkpanic 'client->post(requestPath, config.PostData, config.Headers);
+        }
+        "PUT" => {
+            return checkpanic 'client->put(requestPath, config.PostData, config.Headers);
+        }
+        "DELETE" => {
+            return checkpanic 'client->delete(requestPath, config.Headers);
+        }
+        _ => {
+            return error("Unsupported HTTP method: " + config.Method);
+        }
+    }
+}
+
 function transformXSLT(xml input) returns xml {
     xmlns "http://www.w3.org/1999/XSL/Transform" as xsl;
     xml<xml:Element> values = input/**/<xsl:value\-of>;

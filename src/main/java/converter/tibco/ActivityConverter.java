@@ -297,23 +297,13 @@ class ActivityConverter {
                 new BallerinaModel.Expression.VariableReference(configVarDecl.varName());
         BallerinaModel.Expression.VariableReference client = cx.client(httpSend.httpClientResource());
 
-        BallerinaModel.Expression.FunctionCall pathGetFunctionCall =
-                new BallerinaModel.Expression.FunctionCall(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG.name,
-                        List.of(configVarRef));
-        BallerinaModel.VarDeclStatment requestURI =
-                new BallerinaModel.VarDeclStatment(STRING, cx.getAnnonVarName(), pathGetFunctionCall);
-        body.add(requestURI);
+        String httpCallFnName = cx.processContext.projectContext.getHttpCallFunction();
+        BallerinaModel.Expression.FunctionCall httpCallFn =
+                new BallerinaModel.Expression.FunctionCall(httpCallFnName, List.of(configVar, client));
 
-        // TODO: handle non-post
-        BallerinaModel.Action.RemoteMethodCallAction call = new BallerinaModel.Action.RemoteMethodCallAction(
-                new BallerinaModel.Expression.VariableReference(
-                        client.varName()),
-                "/" + requestURI.varName() + ".post",
-                List.of(new BallerinaModel.Expression.FieldAccess(configVarRef, "PostData"),
-                        new BallerinaModel.Expression.FieldAccess(configVarRef, "Headers")));
         BallerinaModel.VarDeclStatment responseDecl =
                 new BallerinaModel.VarDeclStatment(JSON, cx.getAnnonVarName(),
-                        new BallerinaModel.Expression.Check(call));
+                        new BallerinaModel.Expression.Check(httpCallFn));
         body.add(responseDecl);
 
         String jsonToXmlFunction = cx.processContext.getJsonToXMLFunction();
