@@ -52,6 +52,11 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             }
             if (typeDesc instanceof TypeDesc.RecordTypeDesc recordTypeDesc) {
                 recordTypeDesc.namespace().ifPresent(ns -> sb.append(ns.annotation()));
+                recordTypeDesc.xmlName().ifPresent(name -> sb.append("""
+                        @xmldata:Name {
+                            value: "%s"
+                        }
+                        """.formatted(name)));
             }
             sb.append("type ").append(name).append(" ").append(typeDesc).append(";");
             return sb.toString();
@@ -103,25 +108,20 @@ public record BallerinaModel(DefaultPackage defaultPackage, List<Module> modules
             }
         }
 
+        record StreamTypeDesc(TypeDesc valueTy, TypeDesc completionType) implements TypeDesc {
+
+            @Override
+            public String toString() {
+                return "stream<" + valueTy + ", " + completionType + ">";
+            }
+        }
+
         record RecordTypeDesc(List<TypeDesc> inclusions, List<RecordField> fields, Optional<TypeDesc> rest,
-                              Optional<Namespace> namespace)
+                              Optional<Namespace> namespace, Optional<String> xmlName)
                 implements TypeDesc {
 
             public RecordTypeDesc(List<TypeDesc> inclusions, List<RecordField> fields) {
-                this(inclusions, fields, Optional.empty(), Optional.empty());
-            }
-
-            public RecordTypeDesc(List<TypeDesc> inclusions, List<RecordField> fields, Namespace namespace) {
-                this(inclusions, fields, Optional.empty(), Optional.of(namespace));
-            }
-
-            public RecordTypeDesc(List<TypeDesc> inclusions, List<RecordField> fields, TypeDesc rest) {
-                this(inclusions, fields, Optional.of(rest), Optional.empty());
-            }
-
-            public RecordTypeDesc(List<TypeDesc> inclusions, List<RecordField> fields, TypeDesc rest,
-                                  Namespace namespace) {
-                this(inclusions, fields, Optional.of(rest), Optional.of(namespace));
+                this(inclusions, fields, Optional.empty(), Optional.empty(), Optional.empty());
             }
 
             private static final String INDENT = "  ";

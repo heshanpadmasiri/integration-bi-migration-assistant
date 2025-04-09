@@ -32,7 +32,7 @@ class TypeConverter {
         } catch (Exception e) {
             // TODO: Handle schema conversion failure
             String allSchemas = String.join(",\n", content);
-            throw new RuntimeException("Failed to convert types:\n" + allSchemas + "\n" + e.getMessage());
+//            throw new RuntimeException("Failed to convert types:\n" + allSchemas + "\n" + e.getMessage());
         }
     }
 

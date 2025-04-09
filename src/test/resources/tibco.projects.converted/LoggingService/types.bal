@@ -5,7 +5,12 @@ type LogMessage anydata;
 type LogParametersType anydata;
 
 type WriteActivityInputTextClass anydata;
-  import ballerina/data.xmldata;
+ import ballerina/data.xmldata;
+
+@xmldata:Namespace {uri: "http://www.example.org/LogResult"}
+public type result record {|
+string \#content;
+|};
 
 @xmldata:Namespace {uri: "http://www.example.org/LogSchema"}
 public type LogMessageType record {|
@@ -61,9 +66,4 @@ string logger;
 @xmldata:Namespace {uri: "http://www.tibco.com/xml/render/example"}
 @xmldata:SequenceOrder {value: 4}
 string timestamp;
-|};
-
-@xmldata:Namespace {uri: "http://www.example.org/LogResult"}
-public type result record {|
-string \#content;
 |};
