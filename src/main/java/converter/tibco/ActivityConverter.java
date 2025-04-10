@@ -437,11 +437,10 @@ class ActivityConverter {
                     varDelStatements.addAll(statements);
                     String concat = statements.stream()
                             .map(BallerinaModel.VarDeclStatment::varName)
-                            .map(each -> "${" + each + "}")
                             .collect(Collectors.joining(" + "));
                     varDecl = new BallerinaModel.VarDeclStatment(
                             XML, cx.getAnnonVarName(),
-                            new BallerinaModel.Expression.XMLTemplate("<root>" + concat + "</root>"));
+                            new BallerinaModel.Expression.XMLTemplate("<root>${" + concat + "}</root>"));
                 }
             }
             varDelStatements.add(varDecl);
