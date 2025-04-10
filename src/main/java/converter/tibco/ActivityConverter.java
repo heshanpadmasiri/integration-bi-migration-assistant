@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ERROR;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
@@ -321,13 +322,8 @@ class ActivityConverter {
             ActivityContext cx,
             TibcoModel.Scope.Flow.Activity.ReceiveEvent receiveEvent
     ) {
-        // This is just a no-op since, we have created the service already and connected it to the process function
-        // when handling the WSDL type definition.
-        return createNoOp(cx);
-    }
-
-    private static @NotNull List<BallerinaModel.Statement> createNoOp(ActivityContext cx) {
-        return List.of(new BallerinaModel.Return<>(cx.getInputAsXml()));
+        return List.of(addToContext(cx, cx.getInputAsXml(), receiveEvent.variable()),
+                new BallerinaModel.Return<>(cx.getInputAsXml()));
     }
 
     private static List<BallerinaModel.Statement> convertInvoke(ActivityContext cx,
@@ -407,16 +403,35 @@ class ActivityConverter {
         List<BallerinaModel.VarDeclStatment> varDelStatements = new ArrayList<>();
         BallerinaModel.Expression.VariableReference last = input;
         for (TibcoModel.Scope.Flow.Activity.InputBinding transform : inputBindings) {
-            TibcoModel.Scope.Flow.Activity.Expression.XSLT xslt = transform.xslt();
-
-            BallerinaModel.VarDeclStatment varDecl = xsltTransform(cx, last, xslt);
+            BallerinaModel.VarDeclStatment varDecl;
+            switch (transform) {
+                case TibcoModel.Scope.Flow.Activity.InputBinding.CompleteBinding completeBinding -> varDecl =
+                        new BallerinaModel.VarDeclStatment(
+                                XML, cx.getAnnonVarName(), xsltTransform(cx, last, completeBinding.xslt()));
+                case TibcoModel.Scope.Flow.Activity.InputBinding.PartialBindings partialBindings -> {
+                    BallerinaModel.Expression.VariableReference finalLast = last;
+                    List<BallerinaModel.VarDeclStatment> statements = partialBindings.xslt().stream()
+                            .map(each -> xsltTransform(cx, finalLast, each))
+                            .map(each -> new BallerinaModel.VarDeclStatment(
+                                    XML, cx.getAnnonVarName(), each))
+                            .toList();
+                    varDelStatements.addAll(statements);
+                    String concat = statements.stream()
+                            .map(BallerinaModel.VarDeclStatment::varName)
+                            .map(each -> "${" + each + "}")
+                            .collect(Collectors.joining(" + "));
+                    varDecl = new BallerinaModel.VarDeclStatment(
+                            XML, cx.getAnnonVarName(),
+                            new BallerinaModel.Expression.XMLTemplate("<root>" + concat + "</root>"));
+                }
+            }
             varDelStatements.add(varDecl);
-            last = new BallerinaModel.Expression.VariableReference(varDecl.varName());
+            last = varDecl.ref();
         }
         return varDelStatements;
     }
 
-    private static BallerinaModel.VarDeclStatment xsltTransform(
+    private static BallerinaModel.Expression xsltTransform(
             ActivityContext cx,
             BallerinaModel.Expression.VariableReference inputVariable,
             TibcoModel.Scope.Flow.Activity.Expression.XSLT xslt
@@ -427,11 +442,9 @@ class ActivityConverter {
                 new BallerinaModel.Expression.FunctionCall(stylesheetTransformer,
                         List.of(new BallerinaModel.Expression.XMLTemplate(
                                 replaceVariableReferences(cx, xslt.expression()))));
-        BallerinaModel.Expression.FunctionCall callExpr = new BallerinaModel.Expression.FunctionCall("xslt:transform",
+        return new BallerinaModel.Expression.Check(new BallerinaModel.Expression.FunctionCall("xslt:transform",
                 new BallerinaModel.Expression[]{inputVariable,
-                        transformerCall, cx.contextVarRef()});
-        return new BallerinaModel.VarDeclStatment(XML, cx.getAnnonVarName(),
-                new BallerinaModel.Expression.Check(callExpr));
+                        transformerCall, cx.contextVarRef()}));
     }
 
     private static String replaceVariableReferences(ActivityContext cx, String expression) {
