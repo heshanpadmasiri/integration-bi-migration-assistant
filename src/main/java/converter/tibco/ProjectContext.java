@@ -184,7 +184,6 @@ public class ProjectContext {
                         )
                 ));
         typeCx.moduleTypeDefs.put(httpConfigTy, Optional.of(httpConfigType));
-        typeCx.addIntrinsic(Intrinsics.CREATE_HTTP_REQUEST_PATH_FROM_CONFIG);
         return new BallerinaModel.TypeDesc.TypeReference(httpConfigTy);
     }
 
