@@ -29,12 +29,16 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
+import io.ballerina.compiler.syntax.tree.ModulePartNode;
+import io.ballerina.compiler.syntax.tree.SyntaxTree;
+
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.BOOLEAN;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ERROR;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
@@ -45,7 +49,7 @@ public class ProcessConverter {
     private ProcessConverter() {
     }
 
-    static BallerinaModel.Module convertProject(
+    static ConversionResult convertProject(
             TibcoToBalConverter.ProjectConversionContext conversionContext,
             Collection<TibcoModel.Process> processes,
             Collection<TibcoModel.Type.Schema> types,
@@ -58,16 +62,29 @@ public class ProcessConverter {
         record ProcessResult(TibcoModel.Process process, TypeConversionResult result) {
 
         }
+        // FIXME: this should ignore schemas
         List<ProcessResult> results =
                 processes.stream().map(process -> new ProcessResult(process,
                         convertTypes(cx.getProcessContext(process), process))).toList();
-        convertTypes(cx, types);
+        List<TibcoModel.Type.Schema> schemas = new ArrayList<>(types);
+        for (var each : processes) {
+            accumSchemas(each, schemas);
+        }
+        SyntaxTree typeSyntaxTree = convertTypes(cx, schemas);
         // We need to ensure all the type definitions have been processed before we start processing the functions
         List<BallerinaModel.TextDocument> textDocuments = results.stream().map(result -> {
             TibcoModel.Process process = result.process();
             return convertBody(cx.getProcessContext(process), process, result.result());
         }).toList();
-        return cx.serialize(textDocuments);
+        return new ConversionResult(cx.serialize(textDocuments), typeSyntaxTree);
+    }
+
+    private static void accumSchemas(TibcoModel.Process process, Collection<TibcoModel.Type.Schema> accum) {
+        for (var each : process.types()) {
+            if (each instanceof TibcoModel.Type.Schema schema) {
+                accum.add(schema);
+            }
+        }
     }
 
     private static void convertResources(ProjectContext cx, Collection<TibcoModel.Resource.JDBCResource> jdbcResources,
@@ -84,9 +101,9 @@ public class ProcessConverter {
         }
     }
 
-    static void convertTypes(ProjectContext cx, Collection<TibcoModel.Type.Schema> schemas) {
+    static SyntaxTree convertTypes(ProjectContext cx, Collection<TibcoModel.Type.Schema> schemas) {
         ContextWithFile typeContext = cx.getTypeContext();
-        TypeConverter.convertSchemas(typeContext, schemas);
+        return TypeConverter.convertSchemas(typeContext, schemas);
     }
 
     static BallerinaModel.Module convertProcess(TibcoModel.Process process) {
@@ -174,15 +191,11 @@ public class ProcessConverter {
 
     private static TypeConversionResult convertTypes(ProcessContext cx, TibcoModel.Process process) {
         List<BallerinaModel.Service> services = new ArrayList<>();
-        Collection<TibcoModel.Type.Schema> schemas = new ArrayList<>();
         for (TibcoModel.Type type : process.types()) {
-            switch (type) {
-                case TibcoModel.Type.Schema schema -> schemas.add(schema);
-                case TibcoModel.Type.WSDLDefinition wsdlDefinition ->
-                        services.addAll(TypeConverter.convertWsdlDefinition(cx, wsdlDefinition));
+            if (Objects.requireNonNull(type) instanceof TibcoModel.Type.WSDLDefinition wsdlDefinition) {
+                services.addAll(TypeConverter.convertWsdlDefinition(cx, wsdlDefinition));
             }
         }
-        TypeConverter.convertSchemas(cx, schemas);
         return new TypeConversionResult(services);
     }
 
