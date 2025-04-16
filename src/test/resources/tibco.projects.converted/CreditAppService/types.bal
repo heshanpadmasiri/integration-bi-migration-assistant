@@ -5,4 +5,3 @@ type HTTPRequestConfig record {
     map<string> Headers = {};
     map<string> parameters = {};
 };
- 

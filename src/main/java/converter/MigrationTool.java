@@ -5,9 +5,7 @@ import ballerina.CodeGenerator;
 import converter.tibco.ConversionResult;
 import converter.tibco.TibcoToBalConverter;
 import io.ballerina.cli.cmd.NewCommand;
-import io.ballerina.compiler.syntax.tree.ModulePartNode;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
-import io.ballerina.tools.text.TextDocuments;
 
 import picocli.CommandLine;
 
@@ -106,12 +104,11 @@ public class MigrationTool {
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error adding project artifacts", e);
         }
-    }
-
-    private static SyntaxTree from(ModulePartNode modulePartNode) {
-        SyntaxTree syntaxTree = SyntaxTree.from(TextDocuments.from(""));
-        syntaxTree = syntaxTree.modifyWith(modulePartNode);
-        return CodeGenerator.formatSyntaxTree(syntaxTree);
+        try {
+            writeASTToFile(targetDir, "types_gen.bal", result.types());
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error creating types files", e);
+        }
     }
 
     private static void writeTextDocument(BallerinaModel.Module module, BallerinaModel.DefaultPackage balPackage,

@@ -1,10 +1,9 @@
 package converter.tibco;
 
 import ballerina.BallerinaModel;
-import io.ballerina.xsd.core.Response;
 import org.jetbrains.annotations.NotNull;
 
-
+import ballerina.CodeGenerator;
 import tibco.TibcoModel;
 
 import java.util.ArrayList;
@@ -16,6 +15,11 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 
+import io.ballerina.compiler.syntax.tree.SyntaxTree;
+import io.ballerina.tools.text.TextDocuments;
+import io.ballerina.xsd.core.response.NodeResponse;
+import io.ballerina.xsd.core.response.Response;
+
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 import static io.ballerina.xsd.core.XSDToRecord.generateNodes;
 
@@ -24,7 +28,7 @@ class TypeConverter {
     private TypeConverter() {
     }
 
-    static void convertSchemas(ContextWithFile cx, Collection<TibcoModel.Type.Schema> schemas) {
+    static SyntaxTree convertSchemas(ContextWithFile cx, Collection<TibcoModel.Type.Schema> schemas) {
         String[] content = schemas.stream().map(TibcoModel.Type.Schema::element).map(ConversionUtils::elementToString)
                 .toArray(String[]::new);
 
@@ -32,9 +36,11 @@ class TypeConverter {
             cx.getProjectContext().incrementTypeCount();
         }
         try {
-            Response response = generateNodes(content);
-            cx.addTypeDefAsIntrinsic(response.types());
+            NodeResponse response = generateNodes(content);
             assert response.diagnostics().isEmpty();
+            SyntaxTree syntaxTree = SyntaxTree.from(TextDocuments.from(""));
+            syntaxTree = syntaxTree.modifyWith(response.types());
+            return CodeGenerator.formatSyntaxTree(syntaxTree);
         } catch (Exception e) {
             // TODO: deal with errors
             throw new RuntimeException("Type conversion failed due to: " + e.getMessage(), e);

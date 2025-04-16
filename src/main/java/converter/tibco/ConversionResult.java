@@ -21,7 +21,8 @@ package converter.tibco;
 import ballerina.BallerinaModel;
 
 import io.ballerina.compiler.syntax.tree.ModulePartNode;
+import io.ballerina.compiler.syntax.tree.SyntaxTree;
 
-public record ConversionResult(BallerinaModel.Module module) {
+public record ConversionResult(BallerinaModel.Module module, SyntaxTree types) {
 
 }

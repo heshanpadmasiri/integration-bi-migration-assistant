@@ -16,4 +16,3 @@ type QueryResult0 record {
     string rating?;
     int numofpulls?;
 };
- 

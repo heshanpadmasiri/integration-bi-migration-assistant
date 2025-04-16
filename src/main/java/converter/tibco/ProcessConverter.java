@@ -36,6 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.ballerina.compiler.syntax.tree.ModulePartNode;
+import io.ballerina.compiler.syntax.tree.SyntaxTree;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.BOOLEAN;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ERROR;
@@ -67,13 +68,13 @@ public class ProcessConverter {
         for (var each : processes) {
             accumSchemas(each, schemas);
         }
-        convertTypes(cx, schemas);
+        SyntaxTree typeSyntaxTree = convertTypes(cx, schemas);
         // We need to ensure all the type definitions have been processed before we start processing the functions
         List<BallerinaModel.TextDocument> textDocuments = results.stream().map(result -> {
             TibcoModel.Process process = result.process();
             return convertBody(cx.getProcessContext(process), process, result.result());
         }).toList();
-        return new ConversionResult(cx.serialize(textDocuments));
+        return new ConversionResult(cx.serialize(textDocuments), typeSyntaxTree);
     }
 
     private static void accumSchemas(TibcoModel.Process process, Collection<TibcoModel.Type.Schema> accum) {
@@ -98,9 +99,9 @@ public class ProcessConverter {
         }
     }
 
-    static void convertTypes(ProjectContext cx, Collection<TibcoModel.Type.Schema> schemas) {
+    static SyntaxTree convertTypes(ProjectContext cx, Collection<TibcoModel.Type.Schema> schemas) {
         ContextWithFile typeContext = cx.getTypeContext();
-        TypeConverter.convertSchemas(typeContext, schemas);
+        return TypeConverter.convertSchemas(typeContext, schemas);
     }
 
     static BallerinaModel.Module convertProcess(TibcoModel.Process process) {
