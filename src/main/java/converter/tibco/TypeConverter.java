@@ -3,6 +3,7 @@ package converter.tibco;
 import ballerina.BallerinaModel;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.xsd.core.Response;
+import org.jetbrains.annotations.NotNull;
 import tibco.TibcoModel;
 
 import java.util.ArrayList;
@@ -11,10 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 import java.util.StringJoiner;
-
-import org.jetbrains.annotations.NotNull;
+import java.util.stream.Stream;
 
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
