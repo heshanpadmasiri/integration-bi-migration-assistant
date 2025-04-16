@@ -243,8 +243,7 @@ public class ProcessConverter {
             inputType = JSON;
         }
         return new BallerinaModel.Function(Optional.empty(), startFuncData.name(),
-                List.of(new BallerinaModel.Parameter(inputType, inputVariable,
-                                new BallerinaModel.BallerinaExpression("()")),
+                List.of(new BallerinaModel.Parameter(inputType, inputVariable),
                         new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(XML), params,
                                 new BallerinaModel.BallerinaExpression("{}"))),
                 Optional.of(returnType.toString()),

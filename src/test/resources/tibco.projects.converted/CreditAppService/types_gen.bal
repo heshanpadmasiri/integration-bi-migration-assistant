@@ -1,22 +1,28 @@
 import ballerina/data.xmldata;
 
-@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/headerParameters"}
-public type getcreditdetailGetHeaderType record {|
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
+public type ExperianResponseSchemaElementType record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
     SequenceGroup sequenceGroup;
 |};
 
-@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/headerParameters"}
-public type getcreditdetailGetHeader record {|
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
+public type ExperianResponseSchemaElement record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
     SequenceGroup sequenceGroup;
 |};
 
-@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/headerParameters"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
 public type SequenceGroup record {|
-    @xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/headerParameters"}
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
     @xmldata:SequenceOrder {value: 1}
-    string \#content;
+    int fiCOScore?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
+    @xmldata:SequenceOrder {value: 2}
+    string rating?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
+    @xmldata:SequenceOrder {value: 3}
+    int noOfInquiries?;
 |};
 
 @xmldata:Namespace {uri: "http://xmlns.example.com/Creditscore/parameters"}
@@ -54,64 +60,92 @@ public type SequenceGroup2 record {|
     string SSN?;
 |};
 
-@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/parameters"}
-public type getcreditdetailGetParameters record {|
-    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup3 sequenceGroup3;
-|};
-
-@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/parameters"}
+@xmldata:Namespace {uri: "http://xmlns.example.com/y54cuadtcxtfstqs3rux2gfdaxppoqgc/parameters"}
 public type SequenceGroup3 record {|
-    @xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/parameters"}
+    @xmldata:Namespace {uri: "http://xmlns.example.com/y54cuadtcxtfstqs3rux2gfdaxppoqgc/parameters"}
     @xmldata:SequenceOrder {value: 1}
-    string \#content;
+    boolean skipvalidation?;
 |};
 
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
-public type ExperianResponseSchemaElementType record {|
+@xmldata:Name {value: "SuccessSchema"}
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type SuccessSchema1 record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
     SequenceGroup4 sequenceGroup4;
 |};
 
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
-public type ExperianResponseSchemaElement record {|
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type SuccessSchema record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
     SequenceGroup4 sequenceGroup4;
 |};
 
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
-public type SequenceGroup4 record {|
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
-    @xmldata:SequenceOrder {value: 1}
-    int fiCOScore?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
-    @xmldata:SequenceOrder {value: 2}
-    string rating?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/json/1535671685533"}
-    @xmldata:SequenceOrder {value: 3}
-    int noOfInquiries?;
-|};
-
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
-public type InputElement record {|
+@xmldata:Name {value: "GiveNewSchemaNameHere"}
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type GiveNewSchemaNameHere1 record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
     SequenceGroup5 sequenceGroup5;
 |};
 
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
-public type SequenceGroup5 record {|
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type GiveNewSchemaNameHere record {|
+    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup5 sequenceGroup5;
+|};
+
+@xmldata:Name {value: "CreditScoreSuccessSchema"}
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type CreditScoreSuccessSchema1 record {|
+    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup6 sequenceGroup6;
+|};
+
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type CreditScoreSuccessSchema record {|
+    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup6 sequenceGroup6;
+|};
+
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type SequenceGroup4 record {|
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
     @xmldata:SequenceOrder {value: 1}
-    string dob;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+    int FICOScore?;
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
     @xmldata:SequenceOrder {value: 2}
-    string firstName;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+    int NoOfInquiries?;
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
     @xmldata:SequenceOrder {value: 3}
-    string lastName;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+    string Rating?;
+|};
+
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type SequenceGroup5 record {|
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:SequenceOrder {value: 1}
+    string DOB?;
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:SequenceOrder {value: 2}
+    string FirstName?;
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:SequenceOrder {value: 3}
+    string LastName?;
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
     @xmldata:SequenceOrder {value: 4}
-    string ssn;
+    string SSN?;
+|};
+
+@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+public type SequenceGroup6 record {|
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:SequenceOrder {value: 1}
+    SuccessSchema EquifaxResponse?;
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:SequenceOrder {value: 2}
+    SuccessSchema ExperianResponse?;
+    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:SequenceOrder {value: 3}
+    SuccessSchema TransUnionResponse?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
@@ -125,89 +159,89 @@ public type tmessageBody string;
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type httpTransportHeaders record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup6 sequenceGroup6;
+    SequenceGroup7 sequenceGroup7;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type httpTransportResponseHeaders record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup7 sequenceGroup7;
+    SequenceGroup8 sequenceGroup8;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type httpTransportFaultHeaders record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup8 sequenceGroup8;
+    SequenceGroup9 sequenceGroup9;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type dynamicHeadersTypeDetails record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup9 sequenceGroup9;
+    SequenceGroup10 sequenceGroup10;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type dynamicHeadersType record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup10 sequenceGroup10;
+    SequenceGroup11 sequenceGroup11;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type httpHeaders record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup6 sequenceGroup6;
+    SequenceGroup7 sequenceGroup7;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type httpResponseHeaders record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup7 sequenceGroup7;
+    SequenceGroup8 sequenceGroup8;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type httpFaultHeaders record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup8 sequenceGroup8;
+    SequenceGroup9 sequenceGroup9;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type statusLineType record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup11 sequenceGroup11;
+    SequenceGroup12 sequenceGroup12;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type statusLine record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup11 sequenceGroup11;
+    SequenceGroup12 sequenceGroup12;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type client4XXErrorType record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup12 sequenceGroup12;
+    SequenceGroup13 sequenceGroup13;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type client4XXError record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup12 sequenceGroup12;
+    SequenceGroup13 sequenceGroup13;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type server5XXErrorType record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup13 sequenceGroup13;
+    SequenceGroup14 sequenceGroup14;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type server5XXError record {|
     @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup13 sequenceGroup13;
+    SequenceGroup14 sequenceGroup14;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup6 record {|
+public type SequenceGroup7 record {|
     @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 1}
     string Accept?;
@@ -237,34 +271,6 @@ public type SequenceGroup6 record {|
     string Authorization?;
     @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 10}
-    dynamicHeadersType DynamicHeaders?;
-|};
-
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup7 record {|
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 1}
-    string Content_Length?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 2}
-    string Connection?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 3}
-    string Pragma?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 4}
-    string StatusLine?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 5}
-    string Location?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 6}
-    string Set_Cookie?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 7}
-    string Content_Type?;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 8}
     dynamicHeadersType DynamicHeaders?;
 |};
 
@@ -300,6 +306,34 @@ public type SequenceGroup8 record {|
 public type SequenceGroup9 record {|
     @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 1}
+    string Content_Length?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 2}
+    string Connection?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 3}
+    string Pragma?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 4}
+    string StatusLine?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 5}
+    string Location?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 6}
+    string Set_Cookie?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 7}
+    string Content_Type?;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 8}
+    dynamicHeadersType DynamicHeaders?;
+|};
+
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+public type SequenceGroup10 record {|
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+    @xmldata:SequenceOrder {value: 1}
     string Name;
     @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 2}
@@ -307,17 +341,10 @@ public type SequenceGroup9 record {|
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup10 record {|
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 1}
-    dynamicHeadersTypeDetails[] Header?;
-|};
-
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type SequenceGroup11 record {|
     @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 1}
-    int statusCode;
+    dynamicHeadersTypeDetails[] Header?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
@@ -325,9 +352,6 @@ public type SequenceGroup12 record {|
     @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 1}
     int statusCode;
-    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-    @xmldata:SequenceOrder {value: 2}
-    string message?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
@@ -340,92 +364,68 @@ public type SequenceGroup13 record {|
     string message?;
 |};
 
-@xmldata:Name {value: "SuccessSchema"}
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-public type SuccessSchema1 record {|
-    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup14 sequenceGroup14;
-|};
-
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-public type SuccessSchema record {|
-    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup14 sequenceGroup14;
-|};
-
-@xmldata:Name {value: "GiveNewSchemaNameHere"}
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-public type GiveNewSchemaNameHere1 record {|
-    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup15 sequenceGroup15;
-|};
-
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-public type GiveNewSchemaNameHere record {|
-    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup15 sequenceGroup15;
-|};
-
-@xmldata:Name {value: "CreditScoreSuccessSchema"}
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-public type CreditScoreSuccessSchema1 record {|
-    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup16 sequenceGroup16;
-|};
-
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-public type CreditScoreSuccessSchema record {|
-    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-    SequenceGroup16 sequenceGroup16;
-|};
-
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type SequenceGroup14 record {|
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 1}
-    int FICOScore?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    int statusCode;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
     @xmldata:SequenceOrder {value: 2}
-    int NoOfInquiries?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-    @xmldata:SequenceOrder {value: 3}
-    string Rating?;
+    string message?;
 |};
 
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/parameters"}
+public type getcreditdetailGetParameters record {|
+    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup15 sequenceGroup15;
+|};
+
+@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/parameters"}
 public type SequenceGroup15 record {|
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/parameters"}
     @xmldata:SequenceOrder {value: 1}
-    string DOB?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-    @xmldata:SequenceOrder {value: 2}
-    string FirstName?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-    @xmldata:SequenceOrder {value: 3}
-    string LastName?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
-    @xmldata:SequenceOrder {value: 4}
-    string SSN?;
+    string \#content;
 |};
 
-@xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+public type InputElement record {|
+    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup16 sequenceGroup16;
+|};
+
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
 public type SequenceGroup16 record {|
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
     @xmldata:SequenceOrder {value: 1}
-    SuccessSchema EquifaxResponse?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    string dob;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
     @xmldata:SequenceOrder {value: 2}
-    SuccessSchema ExperianResponse?;
-    @xmldata:Namespace {uri: "/y54cuadtcxtfstqs3rux2gfdaxppoqgc/T1535409245354Converted/JsonSchema"}
+    string firstName;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
     @xmldata:SequenceOrder {value: 3}
-    SuccessSchema TransUnionResponse?;
+    string lastName;
+    @xmldata:Namespace {uri: "http://tns.tibco.com/bw/activity/jsonRender/xsd/input/55832ae5-2a37-4b37-8392-a64537f49367"}
+    @xmldata:SequenceOrder {value: 4}
+    string ssn;
 |};
 
-@xmldata:Namespace {uri: "http://xmlns.example.com/y54cuadtcxtfstqs3rux2gfdaxppoqgc/parameters"}
+@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/headerParameters"}
+public type getcreditdetailGetHeaderType record {|
+    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup17 sequenceGroup17;
+|};
+
+@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/headerParameters"}
+public type getcreditdetailGetHeader record {|
+    @xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup17 sequenceGroup17;
+|};
+
+@xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/headerParameters"}
 public type SequenceGroup17 record {|
-    @xmldata:Namespace {uri: "http://xmlns.example.com/y54cuadtcxtfstqs3rux2gfdaxppoqgc/parameters"}
+    @xmldata:Namespace {uri: "http://xmlns.example.com/GetCreditDetail/headerParameters"}
     @xmldata:SequenceOrder {value: 1}
-    boolean skipvalidation?;
+    string \#content;
 |};
 
 @xmldata:Namespace {uri: "http://www.tibco.com/pe/EngineTypes"}
