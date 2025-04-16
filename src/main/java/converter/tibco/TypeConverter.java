@@ -1,12 +1,9 @@
 package converter.tibco;
 
 import ballerina.BallerinaModel;
-import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.xsd.core.Response;
 import org.jetbrains.annotations.NotNull;
 
-import io.ballerina.compiler.syntax.tree.ModulePartNode;
-import io.ballerina.xsd.core.ModuleNodeResponse;
 
 import tibco.TibcoModel;
 
@@ -19,7 +16,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 
-import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 import static io.ballerina.xsd.core.XSDToRecord.generateNodes;
 
@@ -28,16 +24,21 @@ class TypeConverter {
     private TypeConverter() {
     }
 
-    static ModulePartNode convertSchemas(ContextWithFile cx, Collection<TibcoModel.Type.Schema> schemas) {
+    static void convertSchemas(ContextWithFile cx, Collection<TibcoModel.Type.Schema> schemas) {
         String[] content = schemas.stream().map(TibcoModel.Type.Schema::element).map(ConversionUtils::elementToString)
                 .toArray(String[]::new);
 
         for (int i = 0; i < content.length; i++) {
             cx.getProjectContext().incrementTypeCount();
         }
-        ModuleNodeResponse result = generateNodes(content);
-        // TODO: deal with errors
-        return result.types();
+        try {
+            Response response = generateNodes(content);
+            cx.addTypeDefAsIntrinsic(response.types());
+            assert response.diagnostics().isEmpty();
+        } catch (Exception e) {
+            // TODO: deal with errors
+            throw new RuntimeException("Type conversion failed due to: " + e.getMessage(), e);
+        }
     }
 
     static Collection<BallerinaModel.Service> convertWsdlDefinition(ProcessContext cx,

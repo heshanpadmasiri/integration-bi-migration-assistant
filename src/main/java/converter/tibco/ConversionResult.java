@@ -22,6 +22,6 @@ import ballerina.BallerinaModel;
 
 import io.ballerina.compiler.syntax.tree.ModulePartNode;
 
-public record ConversionResult(BallerinaModel.Module module, ModulePartNode typesAST) {
+public record ConversionResult(BallerinaModel.Module module) {
 
 }

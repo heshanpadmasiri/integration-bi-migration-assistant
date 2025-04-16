@@ -102,11 +102,6 @@ public class MigrationTool {
             }
         }
         try {
-            writeASTToFile(targetDir, "types_gen.bal", from(result.typesAST()));
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error writing types_gen.bal", e);
-        }
-        try {
             addProjectArtifacts(cx, targetPath);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error adding project artifacts", e);
