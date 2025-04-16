@@ -514,11 +514,84 @@ int statusCode;
 string message?;
 |};
 
+@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
+public type Element record {|
+@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+SequenceGroup8 sequenceGroup8;
+|};
+
+@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
+public type SequenceGroup8 record {|
+@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
+@xmldata:SequenceOrder {value: 1}
+string ssn;
+|};
+
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+public type Response record {|
+@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+SequenceGroup9 sequenceGroup9;
+|};
+
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+public type SuccessSchema record {|
+@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+SequenceGroup9 sequenceGroup9;
+|};
+
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+public type Request record {|
+@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+SequenceGroup10 sequenceGroup10;
+|};
+
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+public type RequestType record {|
+@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
+SequenceGroup10 sequenceGroup10;
+|};
+
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+public type SequenceGroup9 record {|
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 1}
+int FICOScore?;
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 2}
+string Rating?;
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 3}
+int NoOfInquiries?;
+|};
+
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+public type SequenceGroup10 record {|
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 1}
+string SSN?;
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 2}
+string FirstName?;
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 3}
+string LastName?;
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 4}
+string DOB?;
+|};
+
+@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
+public type SequenceGroup11 record {|
+@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
+@xmldata:SequenceOrder {value: 1}
+string ssn;
+|};
+
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type tmessageBody1 string;
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup8 record {|
+public type SequenceGroup12 record {|
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 1}
 string Accept?;
@@ -552,7 +625,7 @@ dynamicHeadersType DynamicHeaders?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup9 record {|
+public type SequenceGroup13 record {|
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 1}
 string Content_Length?;
@@ -580,7 +653,7 @@ dynamicHeadersType DynamicHeaders?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup10 record {|
+public type SequenceGroup14 record {|
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 1}
 string Content_Length?;
@@ -608,7 +681,7 @@ dynamicHeadersType DynamicHeaders?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup11 record {|
+public type SequenceGroup15 record {|
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 1}
 string Name;
@@ -618,122 +691,56 @@ string Value;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup12 record {|
+public type SequenceGroup16 record {|
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 1}
 dynamicHeadersTypeDetails[] Header?;
 |};
 
 @xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup13 record {|
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-@xmldata:SequenceOrder {value: 1}
-int statusCode;
-|};
-
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup14 record {|
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-@xmldata:SequenceOrder {value: 1}
-int statusCode;
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-@xmldata:SequenceOrder {value: 2}
-string message?;
-|};
-
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-public type SequenceGroup15 record {|
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-@xmldata:SequenceOrder {value: 1}
-int statusCode;
-@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
-@xmldata:SequenceOrder {value: 2}
-string message?;
-|};
-
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-public type Response record {|
-@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-SequenceGroup16 sequenceGroup16;
-|};
-
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-public type SuccessSchema record {|
-@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-SequenceGroup16 sequenceGroup16;
-|};
-
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-public type Request record {|
-@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-SequenceGroup17 sequenceGroup17;
-|};
-
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-public type RequestType record {|
-@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-SequenceGroup17 sequenceGroup17;
-|};
-
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-public type SequenceGroup16 record {|
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-@xmldata:SequenceOrder {value: 1}
-int FICOScore?;
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-@xmldata:SequenceOrder {value: 2}
-string Rating?;
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-@xmldata:SequenceOrder {value: 3}
-int NoOfInquiries?;
-|};
-
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
 public type SequenceGroup17 record {|
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 1}
-string SSN?;
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-@xmldata:SequenceOrder {value: 2}
-string FirstName?;
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-@xmldata:SequenceOrder {value: 3}
-string LastName?;
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-@xmldata:SequenceOrder {value: 4}
-string DOB?;
+int statusCode;
 |};
 
-@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
-public type Element record {|
-@xmldata:Sequence {minOccurs: 1, maxOccurs: 1}
-SequenceGroup18 sequenceGroup18;
-|};
-
-@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type SequenceGroup18 record {|
-@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 1}
-string ssn;
+int statusCode;
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
+@xmldata:SequenceOrder {value: 2}
+string message?;
 |};
 
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 public type SequenceGroup19 record {|
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 1}
-int FICOScore?;
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+int statusCode;
+@xmldata:Namespace {uri: "http://tns.tibco.com/bw/REST"}
 @xmldata:SequenceOrder {value: 2}
-string Rating?;
-@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
-@xmldata:SequenceOrder {value: 3}
-int NoOfInquiries?;
+string message?;
 |};
 
 @xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
 public type SequenceGroup20 record {|
 @xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
 @xmldata:SequenceOrder {value: 1}
+int FICOScore?;
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 2}
+string Rating?;
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 3}
+int NoOfInquiries?;
+|};
+
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+public type SequenceGroup21 record {|
+@xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
+@xmldata:SequenceOrder {value: 1}
 string SSN?;
 @xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
 @xmldata:SequenceOrder {value: 2}
@@ -744,11 +751,4 @@ string LastName?;
 @xmldata:Namespace {uri: "/T1535753828744Converted/JsonSchema"}
 @xmldata:SequenceOrder {value: 4}
 string DOB?;
-|};
-
-@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
-public type SequenceGroup21 record {|
-@xmldata:Namespace {uri: "http://www.example.com/namespaces/tns/1535845694732"}
-@xmldata:SequenceOrder {value: 1}
-string ssn;
 |};

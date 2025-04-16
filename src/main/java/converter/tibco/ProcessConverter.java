@@ -34,8 +34,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ANYDATA;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.BOOLEAN;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.ERROR;
+import static ballerina.BallerinaModel.TypeDesc.BuiltinType.JSON;
 import static ballerina.BallerinaModel.TypeDesc.BuiltinType.XML;
 
 public class ProcessConverter {
@@ -194,11 +196,18 @@ public class ProcessConverter {
         var startFuncData = cx.getProcessStartFunction();
         String inputVariable = "input";
         String params = "params";
-        BallerinaModel.Expression.FunctionCall toXMLCall =
-                new BallerinaModel.Expression.FunctionCall(cx.getToXmlFunction(), new String[]{inputVariable});
+        BallerinaModel.Expression.VariableReference inputVar =
+                new BallerinaModel.Expression.VariableReference(inputVariable);
         String inputXML = "inputXML";
         BallerinaModel.VarDeclStatment inputXMLVar =
-                new BallerinaModel.VarDeclStatment(XML, inputXML, new BallerinaModel.Expression.CheckPanic(toXMLCall));
+                new BallerinaModel.VarDeclStatment(XML, inputXML,
+                        new BallerinaModel.Expression.TernaryExpression(
+                                new BallerinaModel.Expression.TypeCheckExpression(
+                                        inputVar, new BallerinaModel.TypeDesc.MapTypeDesc(ANYDATA)),
+                                new BallerinaModel.Expression.CheckPanic(
+                                        new BallerinaModel.Expression.FunctionCall(cx.getToXmlFunction(),
+                                                List.of(inputVar))),
+                                new BallerinaModel.Expression.XMLTemplate("")));
         body.add(inputXMLVar);
 
         String processFunction = cx.getProcessFunction();
@@ -217,8 +226,12 @@ public class ProcessConverter {
         body.add(returnStatement);
 
         BallerinaModel.TypeDesc inputType = startFuncData.inputType();
+        if (inputType == ANYDATA) {
+            inputType = JSON;
+        }
         return new BallerinaModel.Function(Optional.empty(), startFuncData.name(),
-                List.of(new BallerinaModel.Parameter(inputType, inputVariable),
+                List.of(new BallerinaModel.Parameter(inputType, inputVariable,
+                                new BallerinaModel.BallerinaExpression("()")),
                         new BallerinaModel.Parameter(new BallerinaModel.TypeDesc.MapTypeDesc(XML), params,
                                 new BallerinaModel.BallerinaExpression("{}"))),
                 Optional.of(returnType.toString()),
