@@ -66,9 +66,10 @@ public class ProcessContext implements ContextWithFile {
         return new BallerinaModel.TypeDesc.MapTypeDesc(XML);
     }
 
-    public BallerinaModel.VarDeclStatment initContextVar() {
+    public BallerinaModel.VarDeclStatment initContextVar(String paramsVarName) {
         BallerinaModel.VarDeclStatment varDeclStatment = new BallerinaModel.VarDeclStatment(
-                contextType(), "context", new BallerinaModel.BallerinaExpression("{}"));
+                contextType(), "context",
+                new BallerinaModel.BallerinaExpression("{...%s}".formatted(paramsVarName)));
         this.contextRef = new BallerinaModel.Expression.VariableReference(varDeclStatment.varName());
         return varDeclStatment;
     }

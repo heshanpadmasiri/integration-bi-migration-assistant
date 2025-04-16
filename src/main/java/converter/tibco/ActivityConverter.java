@@ -108,6 +108,7 @@ class ActivityConverter {
         List<BallerinaModel.Statement> body = new ArrayList<>();
         BallerinaModel.VarDeclStatment inputDecl = new BallerinaModel.VarDeclStatment(
                 XML, cx.getAnnonVarName(), new BallerinaModel.Expression.XMLTemplate(""));
+        body.add(inputDecl);
         BallerinaModel.Expression.VariableReference input = inputDecl.ref();
         BallerinaModel.Expression.VariableReference result;
         if (reply.inputBindings().isEmpty()) {
@@ -352,6 +353,7 @@ class ActivityConverter {
                 inputBindings.getLast().ref();
 
         AnalysisResult ar = cx.processContext.analysisResult;
+        // FIXME: handle SOAP properly here
         TibcoModel.PartnerLink.Binding binding = ar.getBinding(invoke.partnerLink());
         String invokeHandler = cx.processContext.projectContext.getHttpInvokeFunction();
         BallerinaModel.Expression.FunctionCall invokeCall = new BallerinaModel.Expression.FunctionCall(invokeHandler,
