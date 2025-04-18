@@ -310,7 +310,7 @@ public class ProcessConverter {
         List<BallerinaModel.Statement> body = new ArrayList<>();
         if (activities.isEmpty()) {
             body.add(new BallerinaModel.BallerinaStatement(
-                    new BallerinaModel.Expression.CheckPanic(
+                    new BallerinaModel.Expression.Panic(
                             new BallerinaModel.Expression.VariableReference("err")) + ";\n"));
         } else {
             BallerinaModel.VarDeclStatment input = new BallerinaModel.VarDeclStatment(XML, "input",
