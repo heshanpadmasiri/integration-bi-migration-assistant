@@ -1,6 +1,6 @@
 # Using the Common Library
 
-The `common` module has been configured as a library and published to Maven local. You can now use it in other projects.
+The `common` module has been configured as a library and can be published to Maven local.
 
 ## Publishing to Maven Local
 
@@ -59,11 +59,3 @@ The library is installed at:
 ```
 ~/.m2/repository/com/wso2/integration-bi-migration-assistant-common/0.1.0-SNAPSHOT/
 ```
-
-## Updating the Version
-
-To publish a new version, update the `version` property in the `common/build.gradle` file and run the publish task again.
-
-## Available APIs
-
-The library includes the `BallerinaModel` class and other common utilities for the Integration BI Migration Assistant. Refer to the Javadoc for detailed API documentation.
